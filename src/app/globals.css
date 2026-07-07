@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050806;
+  --foreground: #f5f5f4;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  letter-spacing: 0;
+}
+
+::selection {
+  background: #bef264;
+  color: #050806;
+}
+
+.pitch-texture {
+  background:
+    linear-gradient(90deg, rgba(190, 242, 100, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(190, 242, 100, 0.06) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(250, 204, 21, 0.12), transparent 18rem),
+    #06120d;
+  background-size:
+    64px 64px,
+    64px 64px,
+    auto,
+    auto;
+}
+
+.football-preview {
+  box-shadow:
+    inset 0 0 0 1px rgba(190, 242, 100, 0.08),
+    0 24px 80px rgba(0, 0, 0, 0.35);
 }
