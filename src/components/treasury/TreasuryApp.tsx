@@ -259,7 +259,7 @@ export function TreasuryApp() {
           ),
           activity: [
             createActivity(
-              "Simulated WDK payment",
+              "Simulated payment execution",
               `${formatUsdT(currentRequest.amount)} paid for ${currentRequest.title}.`,
               "green",
             ),

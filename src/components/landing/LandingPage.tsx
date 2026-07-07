@@ -38,11 +38,11 @@ export function LandingPage() {
             <div className="mt-5 grid gap-3 text-sm text-zinc-300 sm:grid-cols-2">
               <div className="flex gap-2">
                 <Flag size={18} className="text-lime-200" aria-hidden="true" />
-                <span>Primary track: WDK-ready self-custodial wallet flow</span>
+                <span>Primary track: WDK with real SDK smoke test</span>
               </div>
               <div className="flex gap-2">
                 <MapPin size={18} className="text-amber-200" aria-hidden="true" />
-                <span>QVAC-ready local assistant; no cloud AI APIs</span>
+                <span>Local deterministic assistant; no QVAC track claim</span>
               </div>
             </div>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -71,7 +71,7 @@ export function LandingPage() {
                 </p>
                 <p className="mt-1 text-2xl font-black">450 USDt</p>
               </div>
-              <Badge tone="green">Demo WDK adapter</Badge>
+              <Badge tone="green">WDK smoke verified</Badge>
             </div>
             <div className="grid gap-3 py-4 sm:grid-cols-3">
               {[
@@ -115,7 +115,7 @@ export function LandingPage() {
           {
             icon: Wallet,
             title: "Self-custodial team treasury",
-            copy: "CupTreasury does not custody team funds. Wallet execution is isolated behind a WDK-ready adapter.",
+            copy: "CupTreasury does not custody team funds. The WDK packages are installed and verified by a no-funds Node smoke test.",
           },
           {
             icon: ShieldCheck,
@@ -124,8 +124,8 @@ export function LandingPage() {
           },
           {
             icon: Bot,
-            title: "QVAC-ready local assistant",
-            copy: "The current assistant is deterministic and local. It uses no cloud AI API and is ready to be replaced by QVAC SDK inference.",
+            title: "Local deterministic assistant",
+            copy: "The current assistant answers from local treasury data, uses no cloud AI API, and is not submitted as a completed QVAC track.",
           },
         ].map((item) => (
           <article

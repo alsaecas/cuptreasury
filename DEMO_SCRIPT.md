@@ -2,6 +2,10 @@
 
 Target length: 90-120 seconds. Maximum allowed video length: under 3 minutes.
 
+Live demo: https://cuptreasury.vercel.app/
+
+Repository: https://github.com/alsaecas/cuptreasury
+
 ## Script
 
 Open on the landing page.
@@ -22,7 +26,7 @@ Create a request.
 
 Approve and simulate payment.
 
-"Once approved, the request can go through the WDK-ready payment adapter. This demo simulates USDt payment execution, so no real funds move and CupTreasury does not custody private keys. The adapter is the place where real WDK wallet-manager calls, policies, signing, and testnet USDt execution would be wired in."
+"Once approved, the request can go through the treasury payment adapter. The browser demo still simulates USDt payment execution, so no real funds move and CupTreasury does not custody private keys. For the WDK track, the project now includes real `@tetherto/wdk` and `@tetherto/wdk-wallet-evm` packages plus a Node smoke test that derives an ephemeral EVM account, reads Sepolia balance, quotes a zero-value fee, and verifies a signature without broadcasting."
 
 Ask the local assistant: "Who still owes money?"
 

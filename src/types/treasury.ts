@@ -19,7 +19,10 @@ export type ExpenseCategory =
 
 export type AiRiskLevel = "Normal" | "Review" | "Unusual";
 
-export type WalletStatus = "Demo WDK adapter" | "Real WDK integration";
+export type WalletStatus =
+  | "Demo WDK adapter"
+  | "WDK SDK installed; demo execution"
+  | "Real WDK integration";
 
 export interface Member {
   id: string;

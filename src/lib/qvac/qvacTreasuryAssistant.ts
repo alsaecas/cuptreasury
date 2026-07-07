@@ -182,5 +182,5 @@ export function getPaymentRiskSummary(request: PaymentRequest): string {
 // Real QVAC integration path:
 // 1. Install @qvac/sdk in a runtime that can load local models on the user's device.
 // 2. Load a small local model through QVAC SDK.
-// 3. Keep prompts and treasury data on-device, then replace deterministic answers
+// 3. Keep prompts and treasury data in the local runtime, then replace deterministic answers
 //    above with local QVAC inference outputs that preserve the same signatures.

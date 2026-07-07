@@ -25,8 +25,8 @@ const steps = [
   },
   {
     icon: MessageSquareText,
-    title: "Simulate WDK payment and ask who owes money",
-    detail: "Run the WDK-ready demo payment and query the local assistant.",
+    title: "Simulate payment and ask who owes money",
+    detail: "Run the demo payment path and query the local assistant.",
   },
 ];
 

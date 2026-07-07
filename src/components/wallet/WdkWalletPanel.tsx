@@ -60,10 +60,22 @@ export function WdkWalletPanel({
           </p>
           <p className="mt-2 text-sm leading-6 text-lime-50/75">
             CupTreasury does not custody team funds in this MVP. The adapter
-            models the wallet/payment flow while real WDK signing remains a
-            documented integration step.
+            models the wallet/payment flow while real treasury signing remains
+            a documented integration step.
           </p>
         </div>
+
+        {adapterStatus.nodeSmokeTestAvailable ? (
+          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+            <p className="text-xs font-semibold text-zinc-500">
+              Real WDK verification
+            </p>
+            <p className="mt-2 text-sm leading-6 text-zinc-300">
+              Node smoke test verifies wallet derivation, Sepolia balance read,
+              fee quote, and signature verification without broadcasting.
+            </p>
+          </div>
+        ) : null}
 
         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
           <p className="text-xs font-semibold text-zinc-500">Wallet address</p>
@@ -116,7 +128,7 @@ export function WdkWalletPanel({
         {transactionResult ? (
           <div className="rounded-lg border border-cyan-300/30 bg-cyan-300/10 p-4">
             <p className="text-sm font-semibold text-cyan-100">
-              Transaction result
+              Simulated transaction result
             </p>
             <p className="mt-2 font-mono text-xs text-cyan-100">
               {transactionResult.txHash}

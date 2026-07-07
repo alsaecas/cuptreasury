@@ -78,7 +78,7 @@ export function CreateRequestModal({
       <section className="w-full max-w-2xl rounded-lg border border-white/10 bg-zinc-950 p-5 shadow-2xl shadow-black/50">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <Badge tone="green">Local risk note generated on-device</Badge>
+            <Badge tone="green">Local deterministic risk note</Badge>
             <h2 className="mt-4 text-2xl font-black text-white">
               Create payment request
             </h2>

@@ -2,11 +2,16 @@
 
 ## Selected Tracks
 
-Current recommended submission:
+Recommended submission:
 
 - Primary: WDK
-- QVAC: not claimed as a completed track in this build
+- QVAC: not claimed as a completed track
 - Pears/Holepunch/Bare: not used
+
+## Public Links
+
+- Repository: https://github.com/alsaecas/cuptreasury
+- Live demo: https://cuptreasury.vercel.app/
 
 ## What Is Actually Implemented
 
@@ -14,6 +19,9 @@ Current recommended submission:
 - Local demo treasury with USDt balance, squad members, roles, contributions, requests, approvals, and activity.
 - Role-based approval rules for Captain and Treasurer.
 - WDK-ready adapter boundary for wallet status, wallet info, balance, payment preparation, simulated execution, and optional explorer URL.
+- Real WDK packages installed: `@tetherto/wdk` and `@tetherto/wdk-wallet-evm`.
+- Node-side WDK smoke test in `scripts/wdk-smoke-test.ts`.
+- Smoke test performs ephemeral EVM account derivation, Sepolia native balance read, zero-value transaction fee quote, message signing, and signature verification.
 - Local deterministic assistant that answers from local treasury state.
 - No cloud AI API calls.
 - No remote inference calls.
@@ -21,27 +29,29 @@ Current recommended submission:
 
 ## What Is Simulated or Demo
 
-- WDK payments are simulated.
-- The wallet address is a placeholder.
-- Balance is local demo state, not a chain read.
-- Transaction hashes are simulated.
+- Browser treasury payments are simulated.
+- The browser wallet address is a placeholder.
+- The dashboard balance is local demo state, not a live chain read.
+- Transaction hashes in the browser are simulated.
 - The assistant is deterministic local logic, not QVAC model inference.
 
 ## What Is Not Claimed
 
-- No real transaction execution is claimed.
-- No real custody is claimed.
+- No real browser transaction execution is claimed.
+- No real production custody is claimed.
+- No live treasury balance is claimed.
 - No real QVAC SDK inference is claimed.
 - No Pear/Holepunch/Bare networking is claimed.
 - No cloud AI is claimed.
 
 ## WDK Integration Status
 
-Status: WDK-ready demo adapter.
+Status: real WDK package integration with Node smoke test; browser payment execution remains simulated.
 
-Implemented file:
+Implemented files:
 
 - `src/lib/wdk/wdkTreasuryAdapter.ts`
+- `scripts/wdk-smoke-test.ts`
 
 The adapter exposes:
 
@@ -52,11 +62,31 @@ The adapter exposes:
 - `executePayment()`
 - `getExplorerUrl()`
 
-The UI calls this adapter for payment preparation and execution. Real WDK usage still requires installing `@tetherto/wdk`, a wallet module such as `@tetherto/wdk-wallet-evm`, secure key handling, provider configuration, testnet USDt, account derivation, policy registration, and signed transaction execution.
+The UI calls this adapter for payment preparation and execution. The adapter reports that the WDK SDK is installed and that a Node smoke test is available, but it also reports that real transactions are not enabled.
+
+Run:
+
+```bash
+npm run wdk:smoke
+```
+
+Expected behavior:
+
+- Generates an ephemeral seed phrase in memory.
+- Registers `@tetherto/wdk-wallet-evm` with `@tetherto/wdk`.
+- Derives account index 0.
+- Reads Sepolia native balance from a public RPC.
+- Quotes a zero-value transfer fee.
+- Signs and verifies a local message.
+- Disposes the WDK instance.
+- Does not persist seed material.
+- Does not broadcast a transaction.
+
+Real signed USDt execution still requires secure key custody, provider/testnet configuration, token contract configuration, test funds, transaction policies, signing, broadcasting, and explorer tracking.
 
 ## QVAC Integration Status
 
-Status: QVAC-ready local assistant adapter, not completed QVAC SDK integration.
+Status: QVAC-ready local assistant adapter shape, not completed QVAC SDK integration.
 
 Implemented file:
 
@@ -78,18 +108,25 @@ Runtime packages:
 - React
 - Tailwind CSS
 - lucide-react icons
+- `@tetherto/wdk`
+- `@tetherto/wdk-wallet-evm`
+
+Development packages:
+
+- TypeScript
+- ESLint
+- Next.js ESLint config
+- `tsx`
 
 External services:
 
-- None used at runtime.
+- Vercel hosts the live demo.
+- `npm run wdk:smoke` uses a public Sepolia RPC endpoint by default.
+- The browser MVP itself does not call blockchain APIs.
 
 Cloud AI APIs:
 
-- None.
-
-Blockchain APIs:
-
-- None used in the current demo.
+- None
 
 Pre-built components:
 
@@ -101,33 +138,27 @@ Repository search was performed for OpenAI, Anthropic, Gemini, LangChain, AI SDK
 
 ## Limitations
 
-- WDK SDK is not installed in the runtime app.
-- Real wallet signing is not implemented.
+- Browser payment execution is simulated.
+- Real wallet signing is not implemented in the browser MVP.
 - QVAC SDK is not installed in the runtime app.
 - No local model files are bundled.
 - Demo state is stored in localStorage.
 - No authentication or multi-device sync.
 - No production custody guarantees.
 
-## Next Steps for Real Tether Stack Integration
+## Next Steps for Production WDK Integration
 
-WDK:
+1. Choose the target USDt network and token contract.
+2. Add secure wallet material handling outside React state and localStorage.
+3. Add testnet funding and provider configuration.
+4. Register WDK transaction policies aligned with Captain/Treasurer approvals.
+5. Replace simulated `executePayment()` with signed WDK transfer logic.
+6. Add explorer URL tracking for submitted transactions.
+7. Add a testnet-only mode for hackathon judging.
 
-1. Install `@tetherto/wdk` and a wallet module.
-2. Create a secure key custody flow.
-3. Configure a testnet provider and USDt token contract.
-4. Add WDK transaction policies for treasury approvals.
-5. Replace simulated execution with signed WDK transactions.
-
-QVAC:
+## Next Steps for QVAC
 
 1. Install `@qvac/sdk` in an environment that can run local models.
 2. Add model lifecycle and local inference setup.
-3. Keep prompts and treasury data on-device.
+3. Keep prompts and treasury data in the local runtime.
 4. Replace deterministic answers with QVAC SDK inference.
-
-Pear:
-
-1. Only add if real peer-to-peer sync is needed.
-2. Use Pear/Holepunch/Bare for team-to-team local-first treasury sync.
-3. Do not claim Pears until actual networking exists.
