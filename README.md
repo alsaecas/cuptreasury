@@ -11,9 +11,14 @@ https://github.com/alsaecas/cuptreasury
 - Nation: Spain
 - Location: Valencia, Spain
 - Hackathon: Tether Developers Cup
-- Primary track: WDK
+- Primary track: WDK only
 - Secondary track: none
 - License: Apache 2.0
+
+WDK verification:
+
+- In-app route: https://cuptreasury.vercel.app/wdk-proof
+- CLI: `npm run wdk:smoke`
 
 ## What It Does
 
@@ -26,12 +31,15 @@ CupTreasury gives the squad one browser-based treasury view:
 - Captain and Treasurer approval flow
 - WDK-ready self-custodial payment boundary
 - Local assistant answers from local treasury data
+- In-app WDK verification proof page
 
 The demo squad is Valencia Hackers FC at the Tether Developers Cup.
 
 ## Current Implementation
 
 - Polished landing page and `/treasury` judge flow
+- In-app WDK proof verification at `/wdk-proof`
+- API endpoint at `/api/wdk/smoke` (returns honest status; WDK native addons prevent Vercel execution)
 - Valencia Hackers FC treasury dashboard
 - Member roles: Captain, Treasurer, Player, Fan
 - Contribution status: Paid, Pending, Partial
@@ -41,18 +49,26 @@ The demo squad is Valencia Hackers FC at the Tether Developers Cup.
   - Above 100 USDt requires two approvals
   - 100 USDt or below requires one approval
   - Only Captain and Treasurer can approve/reject
+- Payment policy card displaying live rule application
 - Demo payment execution after approvals
 - WDK wallet/payment panel with honest adapter status
 - Local deterministic assistant for treasury questions
+- Squad Reminder generator with copy-to-clipboard
 - localStorage persistence and reset demo data
 
 ## WDK Status
 
-The WDK boundary lives in:
+WDK integration files:
 
-- `src/lib/wdk/wdkTreasuryAdapter.ts`
+- `src/lib/wdk/wdkTreasuryAdapter.ts` — browser adapter boundary
+- `src/lib/wdk/wdkSmokeVerification.ts` — shared server-side smoke logic
+- `scripts/wdk-smoke-test.ts` — CLI smoke test entry point
+- `src/app/api/wdk/smoke/route.ts` — in-app API endpoint
+- `src/components/wallet/WdkWalletPanel.tsx` — treasury WDK panel
+- `src/components/wallet/WdkProofClient.tsx` — WDK proof page UI
+- `src/app/wdk-proof/page.tsx` — WDK proof route
 
-It exposes:
+The adapter exposes:
 
 - `getAdapterStatus()`
 - `getTreasuryWallet()`
@@ -66,12 +82,21 @@ What is real:
 - `@tetherto/wdk` is installed.
 - `@tetherto/wdk-wallet-evm` is installed.
 - `scripts/wdk-smoke-test.ts` performs a no-funds Node smoke test.
+- The shared module `src/lib/wdk/wdkSmokeVerification.ts` is used by both the CLI smoke test and the API route.
 - The smoke test generates an ephemeral seed phrase, registers an EVM wallet module, derives an account, reads Sepolia native balance through a public RPC, quotes a zero-value transaction fee, signs a message, verifies the signature, and disposes the WDK instance.
+- The live app includes a `/wdk-proof` page that explains the WDK verification path and links to the CLI smoke test.
+- The `/api/wdk/smoke` endpoint exists but returns an honest status: WDK's sodium-native dependency cannot be bundled for Vercel's serverless runtime.
 
 Run:
 
 ```bash
 npm run wdk:smoke
+```
+
+Open in-app:
+
+```
+https://cuptreasury.vercel.app/wdk-proof
 ```
 
 What is still simulated:
@@ -106,7 +131,7 @@ It supports:
 - Summarize treasury
 - Who still owes money
 - Detect unusual expenses
-- Generate WhatsApp-style reminder text
+- Generate Squad Reminder (WhatsApp-style message with copy button)
 - Explain pending approvals
 
 The current app does not run `@qvac/sdk`, local model inference, embeddings, RAG, speech, multimodal inference, remote inference, or any cloud AI API.
@@ -167,8 +192,10 @@ WDK_SMOKE_EVM_CHAIN_ID=11155111
 3. Review balance, members, pending contributions, and payment requests.
 4. Create a match-day expense.
 5. Approve it as Captain or Treasurer.
-6. Simulate payment execution.
-7. Ask the local assistant: "Who still owes money?"
+6. Check the Treasury Policy card for live rule application.
+7. Simulate payment execution.
+8. Open /wdk-proof and review the WDK verification path.
+9. Ask the local assistant: "Who still owes money?" or use "Generate Squad Reminder".
 
 ## Architecture
 
@@ -177,6 +204,8 @@ src/
   app/
     page.tsx
     treasury/page.tsx
+    wdk-proof/page.tsx
+    api/wdk/smoke/route.ts
   components/
     ai/
     landing/
@@ -189,6 +218,7 @@ src/
     qvac/qvacTreasuryAssistant.ts
     treasury/treasuryRules.ts
     treasury/treasuryStorage.ts
+    wdk/wdkSmokeVerification.ts
     wdk/wdkTreasuryAdapter.ts
   types/
     treasury.ts
@@ -235,6 +265,7 @@ Pre-built UI kits:
 
 - Browser payment execution is simulated.
 - No real USDt transaction is signed or broadcast.
+- The `/api/wdk/smoke` endpoint returns an honest failure status on Vercel due to native addon bundling limitations.
 - QVAC SDK inference is not implemented.
 - No authentication.
 - No backend database.

@@ -120,16 +120,40 @@ export const qvacTreasuryAssistant = {
       (member) => member.contributionPaid < member.contributionExpected,
     );
 
-    if (pendingMembers.length === 0) {
-      return "Team update: everyone is paid up for the treasury. Thanks for keeping match day simple.";
-    }
+    const pendingRequests = getPendingRequests(state);
 
-    const lines = pendingMembers.map((member) => {
-      const amount = member.contributionExpected - member.contributionPaid;
-      return `${member.name}: ${formatUsdT(amount)}`;
-    });
+    const unpaidLines =
+      pendingMembers.length === 0
+        ? ["Everyone is paid up for contributions."]
+        : pendingMembers.map((member) => {
+            const amount =
+              member.contributionExpected - member.contributionPaid;
+            return `${member.name}: ${formatUsdT(amount)} owed`;
+          });
 
-    return `Team update for ${state.team.name}: please send pending CupTreasury contributions before the next match. Still open: ${lines.join(", ")}.`;
+    const requestLines =
+      pendingRequests.length === 0
+        ? ["No pending expense approvals."]
+        : pendingRequests.map((request) => {
+            const remaining = remainingApprovals(request);
+            return remaining === 0
+              ? `${request.title} (${formatUsdT(request.amount)}) is ready for payment.`
+              : `${request.title} needs ${remaining} more approval${remaining === 1 ? "" : "s"}.`;
+          });
+
+    const allLines = [
+      `${state.team.name} treasury update:`,
+      "",
+      "Contributions:",
+      ...unpaidLines,
+      "",
+      "Expenses:",
+      ...requestLines,
+      "",
+      "Please settle before match day.",
+    ];
+
+    return allLines.join("\n");
   },
 
   answerTreasuryQuestion(question: string, state: TreasuryState): string {

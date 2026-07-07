@@ -80,3 +80,73 @@ export function getRoleDescription(role: MemberRole): string {
       return "Can contribute and view expenses";
   }
 }
+
+/**
+ * Payment policy status for display in the UI.
+ */
+export type PaymentPolicyStatus =
+  | "waiting-for-approvals"
+  | "ready-for-payment"
+  | "already-paid"
+  | "rejected"
+  | "blocked";
+
+export interface ApprovalProgress {
+  current: number;
+  required: number;
+  remaining: number;
+  label: string;
+}
+
+export function getApprovalProgress(request: PaymentRequest): ApprovalProgress {
+  const required = requiredApprovals(request.amount);
+  const remaining = remainingApprovals(request);
+  const current = request.approvals.length;
+
+  let label: string;
+  if (remaining === 0) {
+    label = "All approvals collected";
+  } else if (remaining === required) {
+    label = `Needs ${required} approval${required === 1 ? "" : "s"}`;
+  } else {
+    label = `Waiting for ${remaining} more approval${remaining === 1 ? "" : "s"}`;
+  }
+
+  return { current, required, remaining, label };
+}
+
+export function getPaymentPolicyStatus(
+  request: PaymentRequest,
+): PaymentPolicyStatus {
+  if (request.status === "Paid") return "already-paid";
+  if (request.status === "Rejected") return "rejected";
+
+  if (hasEnoughApprovals(request)) return "ready-for-payment";
+
+  if (request.status === "Pending") return "waiting-for-approvals";
+
+  return "blocked";
+}
+
+export function getPaymentPolicyLabel(status: PaymentPolicyStatus): string {
+  switch (status) {
+    case "waiting-for-approvals":
+      return "Policy: waiting for approvals";
+    case "ready-for-payment":
+      return "Policy: ready for WDK payment preparation";
+    case "already-paid":
+      return "Policy: already paid";
+    case "rejected":
+      return "Policy: rejected";
+    case "blocked":
+      return "Policy: blocked";
+  }
+}
+
+export function canPreparePayment(request: PaymentRequest): boolean {
+  return getPaymentPolicyStatus(request) === "ready-for-payment";
+}
+
+export function canMarkAsPaid(request: PaymentRequest): boolean {
+  return canPreparePayment(request);
+}

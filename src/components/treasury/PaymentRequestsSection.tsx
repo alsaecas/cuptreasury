@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/Button";
 import {
   canApprove,
   canSimulatePayment,
+  getPaymentPolicyLabel,
+  getPaymentPolicyStatus,
   remainingApprovals,
   requiredApprovals,
 } from "@/lib/treasury/treasuryRules";
@@ -127,6 +129,17 @@ export function PaymentRequestsSection({
                 <p className="mt-2 text-sm leading-6 text-zinc-500">
                   {request.aiNote}
                 </p>
+              </div>
+
+              <div className="mt-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+                <span className="text-xs font-semibold text-zinc-500">
+                  {getPaymentPolicyLabel(getPaymentPolicyStatus(request))}
+                </span>
+                {approvalsRemaining === 0 && request.status !== "Paid" && request.status !== "Rejected" ? (
+                  <span className="ml-auto text-xs text-lime-200">
+                    {request.approvals.length}/{approvalsRequired} collected
+                  </span>
+                ) : null}
               </div>
 
               <div className="mt-4 flex flex-col gap-3 border-t border-white/10 pt-4 lg:flex-row lg:items-center lg:justify-between">

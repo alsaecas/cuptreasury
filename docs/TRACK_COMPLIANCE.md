@@ -4,7 +4,7 @@
 
 Recommended submission:
 
-- Primary: WDK
+- Primary: WDK only
 - QVAC: not claimed as a completed track
 - Pears/Holepunch/Bare: not used
 
@@ -12,6 +12,8 @@ Recommended submission:
 
 - Repository: https://github.com/alsaecas/cuptreasury
 - Live demo: https://cuptreasury.vercel.app/
+- WDK proof page: https://cuptreasury.vercel.app/wdk-proof
+- WDK smoke API: https://cuptreasury.vercel.app/api/wdk/smoke
 
 ## What Is Actually Implemented
 
@@ -20,9 +22,13 @@ Recommended submission:
 - Role-based approval rules for Captain and Treasurer.
 - WDK-ready adapter boundary for wallet status, wallet info, balance, payment preparation, simulated execution, and optional explorer URL.
 - Real WDK packages installed: `@tetherto/wdk` and `@tetherto/wdk-wallet-evm`.
+- Shared WDK smoke verification module (`src/lib/wdk/wdkSmokeVerification.ts`) used by both CLI and API.
 - Node-side WDK smoke test in `scripts/wdk-smoke-test.ts`.
+- In-app WDK proof page at `/wdk-proof` with honest verification explanation.
+- API endpoint at `/api/wdk/smoke` that returns an honest status about Vercel serverless limitations.
 - Smoke test performs ephemeral EVM account derivation, Sepolia native balance read, zero-value transaction fee quote, message signing, and signature verification.
-- Local deterministic assistant that answers from local treasury state.
+- Treasury Policy card displaying live rule application and request status.
+- Local deterministic assistant with Squad Reminder generator and copy-to-clipboard.
 - No cloud AI API calls.
 - No remote inference calls.
 - localStorage demo persistence.
@@ -33,6 +39,7 @@ Recommended submission:
 - The browser wallet address is a placeholder.
 - The dashboard balance is local demo state, not a live chain read.
 - Transaction hashes in the browser are simulated.
+- The `/api/wdk/smoke` endpoint returns an honest failure status (WDK native addons cannot bundle for Vercel serverless).
 - The assistant is deterministic local logic, not QVAC model inference.
 
 ## What Is Not Claimed
@@ -46,12 +53,17 @@ Recommended submission:
 
 ## WDK Integration Status
 
-Status: real WDK package integration with Node smoke test; browser payment execution remains simulated.
+Status: real WDK package integration with CLI smoke test and shared verification module; browser payment execution remains simulated.
 
 Implemented files:
 
 - `src/lib/wdk/wdkTreasuryAdapter.ts`
+- `src/lib/wdk/wdkSmokeVerification.ts`
 - `scripts/wdk-smoke-test.ts`
+- `src/app/api/wdk/smoke/route.ts`
+- `src/components/wallet/WdkWalletPanel.tsx`
+- `src/components/wallet/WdkProofClient.tsx`
+- `src/app/wdk-proof/page.tsx`
 
 The adapter exposes:
 
@@ -62,7 +74,7 @@ The adapter exposes:
 - `executePayment()`
 - `getExplorerUrl()`
 
-The UI calls this adapter for payment preparation and execution. The adapter reports that the WDK SDK is installed and that a Node smoke test is available, but it also reports that real transactions are not enabled.
+The UI calls this adapter for payment preparation and execution. The adapter reports that the WDK SDK is installed and that a CLI smoke test is available, but it also reports that real transactions are not enabled.
 
 Run:
 
@@ -70,7 +82,13 @@ Run:
 npm run wdk:smoke
 ```
 
-Expected behavior:
+Opening in-app:
+
+```
+https://cuptreasury.vercel.app/wdk-proof
+```
+
+Expected smoke test behavior:
 
 - Generates an ephemeral seed phrase in memory.
 - Registers `@tetherto/wdk-wallet-evm` with `@tetherto/wdk`.
@@ -81,6 +99,13 @@ Expected behavior:
 - Disposes the WDK instance.
 - Does not persist seed material.
 - Does not broadcast a transaction.
+
+API route behavior:
+
+- The `/api/wdk/smoke` endpoint returns an honest JSON status.
+- WDK's `sodium-native` dependency requires native Node.js addons that cannot be bundled by Next.js/Turbopack for Vercel's serverless runtime.
+- The endpoint does not fake success — it returns `ok: false` with a clear explanation.
+- The official verification path remains `npm run wdk:smoke` via CLI or `tsx`.
 
 Real signed USDt execution still requires secure key custody, provider/testnet configuration, token contract configuration, test funds, transaction policies, signing, broadcasting, and explorer tracking.
 
@@ -140,6 +165,7 @@ Repository search was performed for OpenAI, Anthropic, Gemini, LangChain, AI SDK
 
 - Browser payment execution is simulated.
 - Real wallet signing is not implemented in the browser MVP.
+- The `/api/wdk/smoke` endpoint cannot execute real WDK SDK code on Vercel due to native addon bundling.
 - QVAC SDK is not installed in the runtime app.
 - No local model files are bundled.
 - Demo state is stored in localStorage.

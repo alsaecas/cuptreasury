@@ -1,10 +1,12 @@
 import {
   CircleDollarSign,
+  ClipboardCheck,
   Copy,
   ExternalLink,
   ShieldCheck,
   Wallet,
 } from "lucide-react";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -71,9 +73,17 @@ export function WdkWalletPanel({
               Real WDK verification
             </p>
             <p className="mt-2 text-sm leading-6 text-zinc-300">
-              Node smoke test verifies wallet derivation, Sepolia balance read,
-              fee quote, and signature verification without broadcasting.
+              Before production treasury payments are enabled, CupTreasury
+              verifies the WDK wallet path with a no-funds smoke test. The
+              browser MVP still simulates USDt execution.
             </p>
+            <Link
+              href="/wdk-proof"
+              className="mt-3 inline-flex items-center gap-2 rounded-md border border-lime-300/30 bg-lime-300/10 px-3 py-2 text-xs font-semibold text-lime-100 transition-colors hover:bg-lime-300/20"
+            >
+              <ClipboardCheck size={14} aria-hidden="true" />
+              Run WDK Proof
+            </Link>
           </div>
         ) : null}
 

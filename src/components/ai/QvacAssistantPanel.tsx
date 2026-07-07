@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Send } from "lucide-react";
+import { Bot, Check, Copy, MessageSquareText, Send } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -28,11 +28,18 @@ export function QvacAssistantPanel({ state }: QvacAssistantPanelProps) {
   const [submittedQuestion, setSubmittedQuestion] = useState(
     "Summarize the treasury",
   );
+  const [copied, setCopied] = useState(false);
   const answer = useMemo(
     () =>
       qvacTreasuryAssistant.answerTreasuryQuestion(submittedQuestion, state),
     [state, submittedQuestion],
   );
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(answer);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   function ask(prompt: string) {
     setQuestion(prompt);
@@ -65,8 +72,27 @@ export function QvacAssistantPanel({ state }: QvacAssistantPanelProps) {
       </div>
 
       <div className="mt-5 rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-4">
-        <p className="text-sm font-semibold text-cyan-100">Assistant answer</p>
-        <p className="mt-2 text-sm leading-6 text-cyan-50/85">{answer}</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-cyan-100">Assistant answer</p>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1 rounded-md border border-cyan-300/30 bg-cyan-300/10 px-2 py-1 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/20"
+          >
+            {copied ? (
+              <>
+                <Check size={12} aria-hidden="true" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy size={12} aria-hidden="true" />
+                Copy
+              </>
+            )}
+          </button>
+        </div>
+        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-cyan-50/85">{answer}</p>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
@@ -81,6 +107,15 @@ export function QvacAssistantPanel({ state }: QvacAssistantPanelProps) {
           </button>
         ))}
       </div>
+
+      <button
+        type="button"
+        onClick={() => ask("Write a WhatsApp reminder for unpaid members")}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-lime-300/30 bg-lime-300/10 px-3 py-3 text-sm font-semibold text-lime-100 transition-colors hover:bg-lime-300/20"
+      >
+        <MessageSquareText size={16} aria-hidden="true" />
+        Generate Squad Reminder
+      </button>
 
       <form className="mt-5 grid gap-3" onSubmit={handleSubmit}>
         <label htmlFor="qvac-question" className="sr-only">

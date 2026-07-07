@@ -18,7 +18,7 @@ Valencia, Spain
 
 ## Tracks
 
-WDK
+WDK only.
 
 Do not select QVAC for this submission. The app includes a local deterministic assistant and QVAC-ready adapter shape, but it does not run QVAC SDK inference.
 
@@ -44,8 +44,10 @@ Real WDK work completed:
 
 - Installed `@tetherto/wdk`.
 - Installed `@tetherto/wdk-wallet-evm`.
-- Added `scripts/wdk-smoke-test.ts`.
-- Added `npm run wdk:smoke`.
+- Extracted a shared WDK smoke verification module (`src/lib/wdk/wdkSmokeVerification.ts`) used by both the CLI smoke test and the API route.
+- Added `scripts/wdk-smoke-test.ts` and `npm run wdk:smoke`.
+- Added an in-app WDK proof page at `/wdk-proof` explaining the verification path.
+- Added an API endpoint at `/api/wdk/smoke` that honestly reports that WDK native addons (sodium-native) cannot be bundled by Next.js for Vercel's serverless runtime.
 - The smoke test generates an ephemeral seed phrase, registers the EVM wallet manager, derives an account, reads Sepolia native balance through a public RPC, quotes a zero-value transaction fee, signs a message, verifies the signature, and disposes the WDK instance.
 
 What remains simulated:

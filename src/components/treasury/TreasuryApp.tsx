@@ -36,6 +36,7 @@ import { JudgeDemoFlowCard } from "./JudgeDemoFlowCard";
 import { MembersSection } from "./MembersSection";
 import { PaymentRequestsSection } from "./PaymentRequestsSection";
 import { TreasuryOverview } from "./TreasuryOverview";
+import { TreasuryPolicyCard } from "./TreasuryPolicyCard";
 
 function createActivity(
   title: string,
@@ -316,6 +317,7 @@ export function TreasuryApp() {
 
         <aside className="space-y-5">
           <JudgeDemoFlowCard compact />
+          <TreasuryPolicyCard state={treasury} />
           <MembersSection members={treasury.team.members} />
           <WdkWalletPanel
             state={treasury}
