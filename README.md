@@ -17,8 +17,9 @@ https://github.com/alsaecas/cuptreasury
 
 WDK verification:
 
-- In-app route: https://cuptreasury.vercel.app/wdk-proof
+- UI explanation: https://cuptreasury.vercel.app/wdk-proof
 - CLI: `npm run wdk:smoke`
+- CI: [![WDK Smoke Verification](https://github.com/alsaecas/cuptreasury/actions/workflows/wdk-smoke.yml/badge.svg)](https://github.com/alsaecas/cuptreasury/actions/workflows/wdk-smoke.yml)
 
 ## What It Does
 
@@ -84,8 +85,9 @@ What is real:
 - `scripts/wdk-smoke-test.ts` performs a no-funds Node smoke test.
 - The shared module `src/lib/wdk/wdkSmokeVerification.ts` is used by both the CLI smoke test and the API route.
 - The smoke test generates an ephemeral seed phrase, registers an EVM wallet module, derives an account, reads Sepolia native balance through a public RPC, quotes a zero-value transaction fee, signs a message, verifies the signature, and disposes the WDK instance.
-- The live app includes a `/wdk-proof` page that explains the WDK verification path and links to the CLI smoke test.
-- The `/api/wdk/smoke` endpoint exists but returns an honest status: WDK's sodium-native dependency cannot be bundled for Vercel's serverless runtime.
+- The live app includes a `/wdk-proof` page that explains WDK verification methods and links to the CLI smoke test.
+- The `/api/wdk/smoke` endpoint is a serverless compatibility check that reports `unsupported_runtime` because WDK's sodium-native addon cannot be bundled for Vercel's serverless runtime.
+- A GitHub Actions WDK Smoke Verification workflow runs the smoke test on push, PR, and manual dispatch. See the CI badge above.
 
 Run:
 
@@ -265,7 +267,7 @@ Pre-built UI kits:
 
 - Browser payment execution is simulated.
 - No real USDt transaction is signed or broadcast.
-- The `/api/wdk/smoke` endpoint returns an honest failure status on Vercel due to native addon bundling limitations.
+- The `/api/wdk/smoke` endpoint returns `unsupported_runtime` status (WDK native addons cannot bundle for Vercel serverless).
 - QVAC SDK inference is not implemented.
 - No authentication.
 - No backend database.

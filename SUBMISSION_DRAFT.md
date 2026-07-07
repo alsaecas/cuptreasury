@@ -44,10 +44,11 @@ Real WDK work completed:
 
 - Installed `@tetherto/wdk`.
 - Installed `@tetherto/wdk-wallet-evm`.
-- Extracted a shared WDK smoke verification module (`src/lib/wdk/wdkSmokeVerification.ts`) used by both the CLI smoke test and the API route.
+- Extracted a shared WDK smoke verification module (`src/lib/wdk/wdkSmokeVerification.ts`) used by both the CLI smoke test and the GitHub Actions CI workflow.
 - Added `scripts/wdk-smoke-test.ts` and `npm run wdk:smoke`.
-- Added an in-app WDK proof page at `/wdk-proof` explaining the verification path.
-- Added an API endpoint at `/api/wdk/smoke` that honestly reports that WDK native addons (sodium-native) cannot be bundled by Next.js for Vercel's serverless runtime.
+- Added a WDK Verification Methods page at `/wdk-proof` with three sections: CLI/CI smoke test, browser flow, and serverless compatibility check.
+- Added a GitHub Actions WDK Smoke Verification workflow (`.github/workflows/wdk-smoke.yml`) that runs lint, build, and the WDK smoke test on every push and PR.
+- Added a `/api/wdk/smoke` endpoint as a serverless compatibility check that returns `unsupported_runtime` status (WDK native addons cannot bundle for Vercel serverless).
 - The smoke test generates an ephemeral seed phrase, registers the EVM wallet manager, derives an account, reads Sepolia native balance through a public RPC, quotes a zero-value transaction fee, signs a message, verifies the signature, and disposes the WDK instance.
 
 What remains simulated:

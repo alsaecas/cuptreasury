@@ -30,18 +30,18 @@ Approve and simulate payment.
 
 Open /wdk-proof.
 
-"Before recording, let me show the WDK Proof page. CupTreasury uses real WDK packages as the wallet foundation. The page explains what the SDK smoke test proves: ephemeral EVM wallet derivation, Sepolia balance read, zero-value fee quote, and message sign and verify — all without broadcasting or storing secrets."
+"This page shows the verification methods. The real WDK proof is the CLI/CI smoke test — it uses real @tetherto/wdk and @tetherto/wdk-wallet-evm packages, derives an ephemeral EVM wallet, reads the Sepolia balance, quotes a zero-value fee, signs and verifies a message, and broadcasts nothing."
 
-Click "Run WDK Verification" or explain the CLI path.
+Scroll to the Vercel serverless section.
 
-"The verification API exists server-side, but WDK's native addons cannot bundle for Vercel's serverless runtime. The official verification path is the CLI smoke test: npm run wdk:smoke. It's in the repository and judges can run it locally."
+"The Vercel serverless compatibility check is unsupported by design because WDK uses native addons like sodium-native. That is why the real proof runs in CLI and CI. The GitHub Actions workflow runs the smoke test automatically."
 
 Return to treasury.
 
 Ask the local assistant: "Who still owes money?" or click "Generate Squad Reminder".
 
-"The assistant answers from local treasury data only. There is no cloud AI API. It can summarize the treasury, explain approvals, flag unusual expenses, and draft reminders. The QVAC SDK integration is a next step, so this submission is WDK only."
+"The assistant answers from local treasury data only. There is no cloud AI API. It can summarize the treasury, explain approvals, flag unusual expenses, and draft reminders. This submission is WDK only."
 
 Close on the dashboard.
 
-"CupTreasury brings self-custody and local assistance to grassroots football money. WDK only track, real smoke test verified, no cloud AI, no overclaims."
+"CupTreasury brings self-custody and local assistance to grassroots football money. WDK only track, real CLI/CI smoke test verified, no cloud AI, no overclaims."

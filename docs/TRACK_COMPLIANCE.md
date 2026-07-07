@@ -12,8 +12,9 @@ Recommended submission:
 
 - Repository: https://github.com/alsaecas/cuptreasury
 - Live demo: https://cuptreasury.vercel.app/
-- WDK proof page: https://cuptreasury.vercel.app/wdk-proof
+- WDK verification page: https://cuptreasury.vercel.app/wdk-proof
 - WDK smoke API: https://cuptreasury.vercel.app/api/wdk/smoke
+- CI smoke workflow: https://github.com/alsaecas/cuptreasury/actions/workflows/wdk-smoke.yml
 
 ## What Is Actually Implemented
 
@@ -24,8 +25,9 @@ Recommended submission:
 - Real WDK packages installed: `@tetherto/wdk` and `@tetherto/wdk-wallet-evm`.
 - Shared WDK smoke verification module (`src/lib/wdk/wdkSmokeVerification.ts`) used by both CLI and API.
 - Node-side WDK smoke test in `scripts/wdk-smoke-test.ts`.
-- In-app WDK proof page at `/wdk-proof` with honest verification explanation.
-- API endpoint at `/api/wdk/smoke` that returns an honest status about Vercel serverless limitations.
+- In-app WDK verification page at `/wdk-proof` with three sections: CLI/CI smoke test, browser flow, and serverless compatibility check.
+- GitHub Actions WDK Smoke Verification workflow (`.github/workflows/wdk-smoke.yml`) runs lint, build, and smoke test on push, PR, and manual dispatch.
+- API endpoint at `/api/wdk/smoke` that returns `unsupported_runtime` status (WDK native addons cannot bundle for Vercel serverless).
 - Smoke test performs ephemeral EVM account derivation, Sepolia native balance read, zero-value transaction fee quote, message signing, and signature verification.
 - Treasury Policy card displaying live rule application and request status.
 - Local deterministic assistant with Squad Reminder generator and copy-to-clipboard.
@@ -39,7 +41,7 @@ Recommended submission:
 - The browser wallet address is a placeholder.
 - The dashboard balance is local demo state, not a live chain read.
 - Transaction hashes in the browser are simulated.
-- The `/api/wdk/smoke` endpoint returns an honest failure status (WDK native addons cannot bundle for Vercel serverless).
+- The `/api/wdk/smoke` endpoint returns `unsupported_runtime` because WDK's sodium-native addon cannot bundle for Vercel serverless. The real verification paths are CLI and CI.
 - The assistant is deterministic local logic, not QVAC model inference.
 
 ## What Is Not Claimed
@@ -102,10 +104,10 @@ Expected smoke test behavior:
 
 API route behavior:
 
-- The `/api/wdk/smoke` endpoint returns an honest JSON status.
-- WDK's `sodium-native` dependency requires native Node.js addons that cannot be bundled by Next.js/Turbopack for Vercel's serverless runtime.
-- The endpoint does not fake success — it returns `ok: false` with a clear explanation.
-- The official verification path remains `npm run wdk:smoke` via CLI or `tsx`.
+- The `/api/wdk/smoke` endpoint is a serverless compatibility check.
+- It returns `status: "unsupported_runtime"` because WDK's `sodium-native` dependency requires native Node.js addons.
+- The endpoint does not import WDK at build time, so the app compiles and deploys without native addon bundling failures.
+- The official verification paths are `npm run wdk:smoke` (CLI) and the GitHub Actions WDK Smoke Verification workflow (CI).
 
 Real signed USDt execution still requires secure key custody, provider/testnet configuration, token contract configuration, test funds, transaction policies, signing, broadcasting, and explorer tracking.
 
@@ -165,7 +167,7 @@ Repository search was performed for OpenAI, Anthropic, Gemini, LangChain, AI SDK
 
 - Browser payment execution is simulated.
 - Real wallet signing is not implemented in the browser MVP.
-- The `/api/wdk/smoke` endpoint cannot execute real WDK SDK code on Vercel due to native addon bundling.
+- The `/api/wdk/smoke` endpoint returns `unsupported_runtime`; Vercel serverless is not the target runtime for WDK native addons.
 - QVAC SDK is not installed in the runtime app.
 - No local model files are bundled.
 - Demo state is stored in localStorage.

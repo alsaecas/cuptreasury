@@ -56,8 +56,11 @@ Added:
 - `tsx`
 - `scripts/wdk-smoke-test.ts`
 - `src/lib/wdk/wdkSmokeVerification.ts` (shared module)
-- `src/app/api/wdk/smoke/route.ts` (API endpoint)
-- `src/components/wallet/WdkProofClient.tsx` (in-app proof page)
+- `src/app/api/wdk/smoke/route.ts` (serverless compatibility check)
+- `src/components/wallet/WdkProofClient.tsx` (WDK verification methods page)
+- `src/app/wdk-proof/page.tsx` (route)
+- `.github/workflows/wdk-smoke.yml` (CI smoke verification workflow)
+- `npm run wdk:smoke`
 - `src/app/wdk-proof/page.tsx` (route)
 - `npm run wdk:smoke`
 
@@ -82,47 +85,57 @@ The smoke test does not:
 - Require API keys
 - Change browser demo state
 
-## WDK Proof in the Live App
+## WDK Verification in the Live App
 
-The in-app WDK proof experience:
+The in-app WDK verification experience:
 
-- **Route**: `/wdk-proof`
-- **API endpoint**: `/api/wdk/smoke`
-- **Landing page link**: "Run WDK Proof" button
-- **Treasury page link**: "Run WDK Proof" button in the WDK wallet panel
+- **Route**: `/wdk-proof` (titled "WDK Verification Methods")
+- **Three sections**: CLI/CI smoke test (real), browser flow (simulated), serverless compatibility check (unsupported by design)
+- **API endpoint**: `/api/wdk/smoke` — returns `unsupported_runtime` status
+- **CI workflow**: `.github/workflows/wdk-smoke.yml` — runs on push, PR, and manual dispatch
+- **Landing page link**: "See WDK Verification" button
+- **Treasury page link**: "View WDK Verification" button in the WDK wallet panel
 
 The `/wdk-proof` page explains:
 
-- What the WDK verification proves (real SDK packages, wallet derivation, balance read, fee quote, sign/verify).
-- What remains simulated (browser payment execution, dashboard balance, USDt signing/broadcasting).
-- Why the verification is safe (no funds moved, no secrets persisted, no transaction broadcast).
-- The CLI verification command: `npm run wdk:smoke`.
+- Section A — The real WDK CLI/CI smoke test (what it does, how to run it, what it proves).
+- Section B — The browser treasury flow (what is simulated, why it is simulated).
+- Section C — The Vercel serverless compatibility check (why it is unsupported by design).
+- Copy-to-clipboard for `npm run wdk:smoke`.
+- Link to the GitHub Actions CI smoke workflow.
 
-The `/api/wdk/smoke` endpoint returns an honest status:
+The `/api/wdk/smoke` endpoint returns `unsupported_runtime`:
 
 ```json
 {
   "ok": false,
+  "status": "unsupported_runtime",
+  "runtime": "vercel_next_serverless",
   "sdk": "@tetherto/wdk",
   "walletModule": "@tetherto/wdk-wallet-evm",
-  "error": "WDK SDK requires native Node.js addons (sodium-native) that are incompatible with Next.js serverless bundling. The real WDK verification is available locally via the CLI smoke test: npm run wdk:smoke",
+  "message": "WDK smoke verification requires a compatible Node/Bare runtime because of native addons. Use npm run wdk:smoke or the GitHub Actions WDK smoke workflow.",
+  "recommendedVerification": "npm run wdk:smoke",
   "broadcast": false,
   "secretsPersisted": false,
   "timestamp": "..."
 }
 ```
 
-## Why the API Cannot Run WDK on Vercel
+## Why Vercel Serverless Is Unsupported
 
 `@tetherto/wdk` depends on `sodium-native`, a native Node.js addon that must be compiled for the target platform. Next.js/Turbopack cannot bundle native addons for Vercel's serverless runtime in the way the WDK SDK expects.
 
-The shared verification module (`src/lib/wdk/wdkSmokeVerification.ts`) works perfectly when run via `tsx` in a local Node.js environment (the CLI smoke test). It cannot be imported in a Next.js route handler that gets bundled by Turbopack.
+The shared verification module (`src/lib/wdk/wdkSmokeVerification.ts`) works perfectly when run via `tsx` in a local Node.js environment or in GitHub Actions CI. It cannot be imported in a Next.js route handler that gets bundled by Turbopack.
 
-The API route exists to demonstrate the intent and to provide an honest entry point that documents the limitation.
+The `/api/wdk/smoke` route serves as a serverless compatibility check — it does not import WDK at build time, so the app compiles and deploys cleanly. It returns `unsupported_runtime` instead of pretending to run.
+
+The real WDK verification paths are:
+- CLI: `npm run wdk:smoke`
+- CI: GitHub Actions WDK Smoke Verification workflow (`.github/workflows/wdk-smoke.yml`)
 
 ## What Failed or Was Not Attempted
 
-- **Vercel serverless WDK execution**: The `/api/wdk/smoke` route cannot import `@tetherto/wdk` at build time due to `sodium-native` native addon bundling failure.
+- **Vercel serverless WDK execution**: The `/api/wdk/smoke` route returns `unsupported_runtime` because WDK's `sodium-native` native addon cannot be bundled for Vercel serverless. This is documented as expected behavior, not a bug.
 - Full browser WDK signing was not attempted because secure key custody is not designed yet.
 - Real USDt transfer execution was not attempted because the MVP does not have testnet wallet material, test funds, token contract configuration, or signing policies.
 - `@tetherto/wdk-core` could not be installed from npm.
@@ -136,8 +149,9 @@ Browser integration is possible only with a proper custody design. The current a
 For this pass, the honest integration boundary is:
 
 - Real WDK package installability and Node-side SDK behavior are verified.
-- A shared verification module is extracted for reuse across CLI and API.
-- An in-app proof page explains the WDK verification path to judges.
+- A shared verification module is extracted for reuse across CLI and CI.
+- A WDK verification methods page explains the three verification paths (CLI, CI, serverless check).
+- A GitHub Actions CI workflow runs lint, build, and smoke test on every push and PR.
 - Browser payment execution remains simulated.
 - The adapter continues to isolate payment preparation and execution so real WDK signing can replace the simulation later.
 
@@ -147,7 +161,8 @@ For this pass, the honest integration boundary is:
 - `npm run wdk:smoke` is a real SDK smoke test.
 - The shared verification module (`src/lib/wdk/wdkSmokeVerification.ts`) is real, tested code.
 - The adapter status reports that the WDK SDK is installed and smoke-test verified.
-- The `/wdk-proof` page provides a judge-friendly explanation of the WDK path.
+- The `/wdk-proof` page provides a judge-friendly explanation of WDK verification methods.
+- The GitHub Actions CI workflow publicly verifies the smoke test on every push.
 - The product flow uses a stable adapter boundary for wallet/payment behavior.
 
 ## What Is Still Simulated
@@ -157,7 +172,7 @@ For this pass, the honest integration boundary is:
 - Demo wallet address
 - Transaction hashes shown after simulated payment
 - Explorer URL resolution
-- In-app `/api/wdk/smoke` execution (returns honest failure on Vercel)
+- In-app `/api/wdk/smoke` execution (returns `unsupported_runtime` on Vercel; real verification is CLI/CI)
 
 ## How Judges Can Verify
 
@@ -176,15 +191,15 @@ Then open:
 
 Judge flow:
 
-1. Open the landing page and click "Run WDK Proof".
-2. Review the WDK verification explanation.
+1. Open the landing page and click "See WDK Verification".
+2. Review the three WDK verification methods (CLI/CI, browser flow, serverless check).
 3. Return to treasury.
 4. Create a match-day expense.
 5. Check the Treasury Policy card for live rule application.
 6. Approve as Captain or Treasurer.
 7. Simulate payment execution.
 8. Use "Generate Squad Reminder" or ask: "Who still owes money?"
-9. Run `npm run wdk:smoke` locally to verify the real WDK SDK path.
+9. Run `npm run wdk:smoke` locally or check the CI workflow to verify the real WDK SDK path.
 
 ## Production WDK Next Steps
 

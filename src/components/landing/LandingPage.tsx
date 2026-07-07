@@ -65,7 +65,7 @@ export function LandingPage() {
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-zinc-50 transition-colors hover:bg-white/10"
               >
                 <ShieldCheck size={18} aria-hidden="true" />
-                Run WDK Proof
+                See WDK Verification
               </Link>
             </div>
           </div>

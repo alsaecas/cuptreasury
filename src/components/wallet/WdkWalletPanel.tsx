@@ -1,6 +1,5 @@
 import {
   CircleDollarSign,
-  ClipboardCheck,
   Copy,
   ExternalLink,
   ShieldCheck,
@@ -73,16 +72,16 @@ export function WdkWalletPanel({
               Real WDK verification
             </p>
             <p className="mt-2 text-sm leading-6 text-zinc-300">
-              Before production treasury payments are enabled, CupTreasury
-              verifies the WDK wallet path with a no-funds smoke test. The
-              browser MVP still simulates USDt execution.
+              CupTreasury verifies the WDK wallet path through a real CLI/CI
+              smoke test. The browser MVP keeps treasury payment execution
+              simulated while showing the intended self-custodial flow.
             </p>
             <Link
               href="/wdk-proof"
               className="mt-3 inline-flex items-center gap-2 rounded-md border border-lime-300/30 bg-lime-300/10 px-3 py-2 text-xs font-semibold text-lime-100 transition-colors hover:bg-lime-300/20"
             >
-              <ClipboardCheck size={14} aria-hidden="true" />
-              Run WDK Proof
+              <ShieldCheck size={14} aria-hidden="true" />
+              View WDK Verification
             </Link>
           </div>
         ) : null}
