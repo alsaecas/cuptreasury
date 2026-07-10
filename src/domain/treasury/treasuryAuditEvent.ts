@@ -137,6 +137,20 @@ export function executionReceiptEvents(
     );
   }
 
+  if (receipt.consumed) {
+    events.push(
+      createAuditEvent({
+        type: "IntentConsumed",
+        aggregateId: receipt.intentId,
+        timestamp: receipt.timestamp,
+        metadata: {
+          requestId: receipt.requestId,
+          receiptId: receipt.receiptId,
+        },
+      }),
+    );
+  }
+
   return events;
 }
 
@@ -150,6 +164,22 @@ export function replayPaymentIntentAudit(
 
   return orderedEvents.reduce<PaymentIntentExecutionProjection>(
     (projection, event) => {
+      const projectionIsFinal = [
+        "confirmed",
+        "expired",
+        "cancelled",
+        "consumed",
+      ].includes(projection.status);
+
+      if (
+        projectionIsFinal &&
+        !["TransactionConfirmed", "IntentExpired", "IntentCancelled", "IntentConsumed"].includes(
+          event.type,
+        )
+      ) {
+        return projection;
+      }
+
       switch (event.type) {
         case "PaymentIntentCreated":
           return {

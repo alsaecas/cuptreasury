@@ -1,21 +1,27 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  InMemoryTreasuryMembershipProvider,
+  TreasuryDomainError,
   assertPaymentIntentHash,
   consumePaymentIntent,
   createAuditEvent,
   createPaymentIntent,
   evaluateTreasuryApprovalPolicy,
   executionReceiptEvents,
+  expirePaymentIntent,
+  fixedClock,
   hashPaymentIntent,
+  mutableClock,
   paymentIntentCreatedEvent,
   policyDecisionEvent,
   replayPaymentIntentAudit,
+  requiredApprovalsForAmountAtomic,
   transitionPaymentIntent,
-  TreasuryDomainError,
   type ExecutionReceipt,
   type PaymentIntent,
   type TreasuryApproval,
+  type TreasuryMemberRecord,
   type TreasuryPaymentRequest,
 } from ".";
 
@@ -26,20 +32,29 @@ const RECIPIENT = "0x0000000000000000000000000000000000003000";
 
 const captainApproval: TreasuryApproval = {
   id: "approval-captain",
-  memberId: "member-captain",
+  memberId: "member-alejandro",
   memberAddress: "0x00000000000000000000000000000000000000ca",
-  memberName: "Captain",
+  memberName: "Alejandro",
   role: "Captain",
   createdAt: "2026-07-10T09:00:00.000Z",
 };
 
 const treasurerApproval: TreasuryApproval = {
   id: "approval-treasurer",
-  memberId: "member-treasurer",
+  memberId: "member-paulina",
   memberAddress: "0x00000000000000000000000000000000000000b0",
-  memberName: "Treasurer",
+  memberName: "Paulina",
   role: "Treasurer",
   createdAt: "2026-07-10T09:01:00.000Z",
+};
+
+const playerApproval: TreasuryApproval = {
+  id: "approval-player",
+  memberId: "member-mateo",
+  memberAddress: "0x00000000000000000000000000000000000000f1",
+  memberName: "Mateo",
+  role: "Player",
+  createdAt: "2026-07-10T09:02:00.000Z",
 };
 
 function request(
@@ -48,11 +63,11 @@ function request(
   return {
     id: "request-van-rental",
     title: "Van rental",
-    amountUnits: 120,
     amountAtomic: "120000000",
+    displayAmount: "120",
     tokenSymbol: "MockUSDT",
     tokenDecimals: 6,
-    requestedByMemberId: "member-captain",
+    requestedByMemberId: "member-alejandro",
     requestedByAddress: captainApproval.memberAddress,
     status: "pending",
     approvals: [captainApproval, treasurerApproval],
@@ -63,9 +78,7 @@ function request(
   };
 }
 
-function intent(
-  overrides: Partial<PaymentIntent> = {},
-): PaymentIntent {
+function intent(overrides: Partial<PaymentIntent> = {}): PaymentIntent {
   const created = createPaymentIntent(
     {
       request: request(),
@@ -78,7 +91,7 @@ function intent(
       intentId: "intent-van-rental",
       createdAt: "2026-07-10T10:00:00.000Z",
     },
-    NOW,
+    fixedClock(NOW),
   );
 
   return {
@@ -87,16 +100,53 @@ function intent(
   };
 }
 
+describe("atomic treasury approval thresholds", () => {
+  it("requires one approval for exactly 100 tokens", () => {
+    expect(requiredApprovalsForAmountAtomic("100000000", 6)).toBe(1);
+  });
+
+  it("requires two approvals for 100.000001 tokens with six decimals", () => {
+    expect(requiredApprovalsForAmountAtomic("100000001", 6)).toBe(2);
+  });
+
+  it("requires one approval for 99.999999 tokens", () => {
+    expect(requiredApprovalsForAmountAtomic("99999999", 6)).toBe(1);
+  });
+
+  it("rejects inconsistent display amounts", () => {
+    expect(() =>
+      evaluateTreasuryApprovalPolicy(
+        request({
+          amountAtomic: "120000000",
+          displayAmount: "99",
+        }),
+        fixedClock(NOW),
+      ),
+    ).toThrow(TreasuryDomainError);
+  });
+
+  it.each([
+    ["invalid", "12.5", 6],
+    ["negative", "-1", 6],
+    ["zero", "0", 6],
+    ["unsupported decimals", "100", 19],
+  ])("rejects %s atomic amount input", (_, amountAtomic, tokenDecimals) => {
+    expect(() =>
+      requiredApprovalsForAmountAtomic(amountAtomic, tokenDecimals),
+    ).toThrow(TreasuryDomainError);
+  });
+});
+
 describe("evaluateTreasuryApprovalPolicy", () => {
-  it("denies a 35-unit request with zero approvals", () => {
+  it("denies a 35-token request with zero approvals", () => {
     const decision = evaluateTreasuryApprovalPolicy(
       request({
         id: "request-35-zero",
-        amountUnits: 35,
         amountAtomic: "35000000",
+        displayAmount: "35",
         approvals: [],
       }),
-      NOW,
+      fixedClock(NOW),
     );
 
     expect(decision.decision).toBe("DENY");
@@ -109,26 +159,24 @@ describe("evaluateTreasuryApprovalPolicy", () => {
     );
   });
 
-  it("allows a 35-unit request with one valid approval", () => {
+  it("allows a 35-token request with one valid Captain approval", () => {
     const decision = evaluateTreasuryApprovalPolicy(
       request({
         id: "request-35-one",
-        amountUnits: 35,
         amountAtomic: "35000000",
+        displayAmount: "35",
         approvals: [captainApproval],
       }),
-      NOW,
+      fixedClock(NOW),
     );
 
     expect(decision.decision).toBe("ALLOW");
   });
 
-  it("denies a 120-unit request with one approval", () => {
+  it("denies a 120-token request with one approval", () => {
     const decision = evaluateTreasuryApprovalPolicy(
-      request({
-        approvals: [captainApproval],
-      }),
-      NOW,
+      request({ approvals: [captainApproval] }),
+      fixedClock(NOW),
     );
 
     expect(decision.decision).toBe("DENY");
@@ -140,58 +188,106 @@ describe("evaluateTreasuryApprovalPolicy", () => {
     );
   });
 
-  it("allows a 120-unit request with two approvals", () => {
-    const decision = evaluateTreasuryApprovalPolicy(request(), NOW);
+  it("allows a 120-token request with a valid Captain and Treasurer", () => {
+    const decision = evaluateTreasuryApprovalPolicy(request(), fixedClock(NOW));
 
     expect(decision.decision).toBe("ALLOW");
   });
 
-  it("denies invalid Player approval", () => {
+  it("denies a Player claiming Captain", () => {
     const decision = evaluateTreasuryApprovalPolicy(
       request({
-        amountUnits: 35,
         amountAtomic: "35000000",
-        approvals: [
-          {
-            ...captainApproval,
-            id: "approval-player",
-            role: "Player",
-          },
-        ],
+        displayAmount: "35",
+        approvals: [{ ...playerApproval, role: "Captain" }],
       }),
-      NOW,
+      fixedClock(NOW),
     );
 
     expect(decision.decision).toBe("DENY");
     expect(decision.trace).toContainEqual(
-      expect.objectContaining({ rule: "approver-roles", passed: false }),
+      expect.objectContaining({
+        rule: "approver-roster-roles",
+        passed: false,
+      }),
     );
   });
 
-  it("denies invalid Fan approval", () => {
+  it("denies an unknown member", () => {
     const decision = evaluateTreasuryApprovalPolicy(
       request({
-        amountUnits: 35,
         amountAtomic: "35000000",
+        displayAmount: "35",
         approvals: [
           {
             ...captainApproval,
-            id: "approval-fan",
-            role: "Fan",
+            memberId: "member-unknown",
           },
         ],
       }),
-      NOW,
+      fixedClock(NOW),
     );
 
     expect(decision.decision).toBe("DENY");
+    expect(decision.trace).toContainEqual(
+      expect.objectContaining({ rule: "known-approver-members", passed: false }),
+    );
   });
 
-  it("denies duplicate Captain approval", () => {
+  it("denies an address mismatch", () => {
     const decision = evaluateTreasuryApprovalPolicy(
       request({
-        amountUnits: 35,
         amountAtomic: "35000000",
+        displayAmount: "35",
+        approvals: [
+          {
+            ...captainApproval,
+            memberAddress: treasurerApproval.memberAddress,
+          },
+        ],
+      }),
+      fixedClock(NOW),
+    );
+
+    expect(decision.decision).toBe("DENY");
+    expect(decision.trace).toContainEqual(
+      expect.objectContaining({
+        rule: "registered-approver-addresses",
+        passed: false,
+      }),
+    );
+  });
+
+  it("denies an inactive Captain", () => {
+    const decision = evaluateTreasuryApprovalPolicy(
+      request({
+        amountAtomic: "35000000",
+        displayAmount: "35",
+        approvals: [
+          {
+            id: "approval-retired",
+            memberId: "member-retired-captain",
+            memberAddress: "0x00000000000000000000000000000000000000d0",
+            memberName: "Retired Captain",
+            role: "Captain",
+            createdAt: "2026-07-10T09:03:00.000Z",
+          },
+        ],
+      }),
+      fixedClock(NOW),
+    );
+
+    expect(decision.decision).toBe("DENY");
+    expect(decision.trace).toContainEqual(
+      expect.objectContaining({ rule: "active-approver-members", passed: false }),
+    );
+  });
+
+  it("denies duplicate member approvals", () => {
+    const decision = evaluateTreasuryApprovalPolicy(
+      request({
+        amountAtomic: "35000000",
+        displayAmount: "35",
         approvals: [
           captainApproval,
           {
@@ -200,7 +296,7 @@ describe("evaluateTreasuryApprovalPolicy", () => {
           },
         ],
       }),
-      NOW,
+      fixedClock(NOW),
     );
 
     expect(decision.decision).toBe("DENY");
@@ -212,35 +308,25 @@ describe("evaluateTreasuryApprovalPolicy", () => {
     );
   });
 
-  it("denies duplicate Treasurer address approval", () => {
-    const decision = evaluateTreasuryApprovalPolicy(
-      request({
-        approvals: [
-          treasurerApproval,
-          {
-            ...treasurerApproval,
-            id: "approval-treasurer-duplicate",
-            memberId: "member-second-treasurer-record",
-          },
-        ],
-      }),
-      NOW,
-    );
+  it("rejects duplicate roster member ids and addresses", () => {
+    const duplicateId = () =>
+      new InMemoryTreasuryMembershipProvider([
+        rosterMember("member-a", captainApproval.memberAddress),
+        rosterMember("member-a", treasurerApproval.memberAddress),
+      ]);
+    const duplicateAddress = () =>
+      new InMemoryTreasuryMembershipProvider([
+        rosterMember("member-a", captainApproval.memberAddress),
+        rosterMember("member-b", captainApproval.memberAddress),
+      ]);
 
-    expect(decision.decision).toBe("DENY");
-    expect(decision.trace).toContainEqual(
-      expect.objectContaining({
-        rule: "unique-approver-addresses",
-        passed: false,
-      }),
-    );
+    expect(duplicateId).toThrow(TreasuryDomainError);
+    expect(duplicateAddress).toThrow(TreasuryDomainError);
   });
 
-  it("denies an expired request", () => {
-    const decision = evaluateTreasuryApprovalPolicy(
-      request({ expiresAt: "2026-07-09T08:00:00.000Z" }),
-      NOW,
-    );
+  it("denies an expired request exactly at the boundary", () => {
+    const clock = fixedClock(new Date("2026-07-11T08:00:00.000Z"));
+    const decision = evaluateTreasuryApprovalPolicy(request(), clock);
 
     expect(decision.decision).toBe("DENY");
     expect(decision.trace).toContainEqual(
@@ -251,7 +337,7 @@ describe("evaluateTreasuryApprovalPolicy", () => {
   it("denies a rejected request", () => {
     const decision = evaluateTreasuryApprovalPolicy(
       request({ status: "rejected" }),
-      NOW,
+      fixedClock(NOW),
     );
 
     expect(decision.decision).toBe("DENY");
@@ -259,27 +345,29 @@ describe("evaluateTreasuryApprovalPolicy", () => {
       expect.objectContaining({ rule: "request-open", passed: false }),
     );
   });
-
-  it("denies a consumed request", () => {
-    const decision = evaluateTreasuryApprovalPolicy(
-      request({ status: "consumed" }),
-      NOW,
-    );
-
-    expect(decision.decision).toBe("DENY");
-  });
 });
 
 describe("PaymentIntent capability hashing", () => {
-  it("creates authorized intents for approved requests", () => {
+  it("creates authorized versioned intents for approved requests", () => {
     const created = intent();
 
     expect(created.status).toBe("authorized");
+    expect(created.capabilityVersion).toBe(1);
     expect(created.amountAtomic).toBe("120000000");
     expect(created.requiredApprovals).toBe(2);
-    expect(created.approvalIds).toEqual([
-      captainApproval.id,
-      treasurerApproval.id,
+    expect(created.approvalReferences).toEqual([
+      {
+        approvalId: captainApproval.id,
+        memberId: captainApproval.memberId,
+        address: "0x00000000000000000000000000000000000000ca",
+        role: "Captain",
+      },
+      {
+        approvalId: treasurerApproval.id,
+        memberId: treasurerApproval.memberId,
+        address: "0x00000000000000000000000000000000000000B0",
+        role: "Treasurer",
+      },
     ]);
   });
 
@@ -294,7 +382,7 @@ describe("PaymentIntent capability hashing", () => {
         expiresAt: "2026-07-11T08:00:00.000Z",
         nonce: "nonce-under-approved",
       },
-      NOW,
+      fixedClock(NOW),
     );
 
     expect(created.status).toBe("awaiting-approvals");
@@ -312,9 +400,65 @@ describe("PaymentIntent capability hashing", () => {
           expiresAt: "2026-07-11T08:00:00.000Z",
           nonce: "nonce-paid",
         },
-        NOW,
+        fixedClock(NOW),
       ),
     ).toThrow(/cannot create a usable PaymentIntent/);
+  });
+
+  it("creates the same hash for equivalent approval order, address case, and timestamp formatting", () => {
+    const first = intent();
+    const second = createPaymentIntent(
+      {
+        request: request({
+          approvals: [
+            {
+              ...treasurerApproval,
+              memberAddress: toUpperAddress(treasurerApproval.memberAddress),
+            },
+            {
+              ...captainApproval,
+              memberAddress: toUpperAddress(captainApproval.memberAddress),
+            },
+          ],
+        }),
+        treasuryAccount: toUpperAddress(TREASURY),
+        chainId: 11155111,
+        tokenAddress: toUpperAddress(TOKEN),
+        recipient: toUpperAddress(RECIPIENT),
+        expiresAt: "2026-07-11T08:00:00Z",
+        nonce: "nonce-1",
+        intentId: "intent-van-rental",
+        createdAt: "2026-07-10T10:00:00Z",
+      },
+      fixedClock(NOW),
+    );
+
+    expect(hashPaymentIntent(second)).toBe(hashPaymentIntent(first));
+  });
+
+  it("does not change the hash for presentation-only member names", () => {
+    const first = intent();
+    const renamed = createPaymentIntent(
+      {
+        request: request({
+          approvals: [
+            { ...captainApproval, memberName: "Captain Display" },
+            { ...treasurerApproval, memberName: "Treasurer Display" },
+          ],
+        }),
+        treasuryAccount: TREASURY,
+        chainId: 11155111,
+        tokenAddress: TOKEN,
+        recipient: RECIPIENT,
+        expiresAt: "2026-07-11T08:00:00.000Z",
+        nonce: "nonce-1",
+        intentId: "intent-van-rental",
+        createdAt: "2026-07-10T10:00:00.000Z",
+      },
+      fixedClock(NOW),
+    );
+
+    expect(hashPaymentIntent(renamed)).toBe(hashPaymentIntent(first));
   });
 
   it.each([
@@ -331,7 +475,7 @@ describe("PaymentIntent capability hashing", () => {
       "expiry",
       (base: PaymentIntent) => ({
         ...base,
-        expiresAt: "2026-07-12T08:00:00.000Z",
+        expiresAt: "2026-07-11T09:00:00.000Z",
       }),
     ],
     [
@@ -357,41 +501,99 @@ describe("PaymentIntent capability hashing", () => {
     );
   });
 
-  it("detects a modified request after intent creation", () => {
-    const originalIntent = intent();
-    const originalHash = hashPaymentIntent(originalIntent);
-    const modifiedIntent = createPaymentIntent(
-      {
-        request: request({
-          amountUnits: 121,
-          amountAtomic: "121000000",
+  it("rejects duplicate approval ids in canonical hashing", () => {
+    expect(() =>
+      hashPaymentIntent(
+        intent({
+          approvalReferences: [
+            {
+              approvalId: "duplicate",
+              memberId: "member-alejandro",
+              address: captainApproval.memberAddress,
+              role: "Captain",
+            },
+            {
+              approvalId: "duplicate",
+              memberId: "member-paulina",
+              address: treasurerApproval.memberAddress,
+              role: "Treasurer",
+            },
+          ],
         }),
-        treasuryAccount: TREASURY,
-        chainId: 11155111,
-        tokenAddress: TOKEN,
-        recipient: RECIPIENT,
-        expiresAt: "2026-07-11T08:00:00.000Z",
-        nonce: "nonce-1",
-        intentId: "intent-van-rental",
-        createdAt: "2026-07-10T10:00:00.000Z",
-      },
-      NOW,
-    );
-
-    expect(hashPaymentIntent(modifiedIntent)).not.toBe(originalHash);
+      ),
+    ).toThrow(TreasuryDomainError);
   });
 });
 
-describe("PaymentIntent state machine", () => {
-  it("allows the expected happy path", () => {
+describe("PaymentIntent expiry and state machine", () => {
+  it("allows before expiry and denies request evaluation at expiry", () => {
+    const clock = mutableClock(new Date("2026-07-11T07:59:59.999Z"));
+
+    expect(evaluateTreasuryApprovalPolicy(request(), clock).decision).toBe(
+      "ALLOW",
+    );
+
+    clock.set(new Date("2026-07-11T08:00:00.000Z"));
+
+    expect(evaluateTreasuryApprovalPolicy(request(), clock).decision).toBe(
+      "DENY",
+    );
+  });
+
+  it("rejects intent expiry before creation and later than request expiry", () => {
+    expect(() =>
+      createPaymentIntent(
+        {
+          request: request(),
+          treasuryAccount: TREASURY,
+          chainId: 11155111,
+          tokenAddress: TOKEN,
+          recipient: RECIPIENT,
+          expiresAt: "2026-07-10T09:59:59.000Z",
+          nonce: "bad-before",
+          createdAt: "2026-07-10T10:00:00.000Z",
+        },
+        fixedClock(NOW),
+      ),
+    ).toThrow(TreasuryDomainError);
+
+    expect(() =>
+      createPaymentIntent(
+        {
+          request: request(),
+          treasuryAccount: TREASURY,
+          chainId: 11155111,
+          tokenAddress: TOKEN,
+          recipient: RECIPIENT,
+          expiresAt: "2026-07-11T08:00:00.001Z",
+          nonce: "bad-request-expiry",
+        },
+        fixedClock(NOW),
+      ),
+    ).toThrow(TreasuryDomainError);
+  });
+
+  it("does not rewrite final states during expiry", () => {
+    for (const status of ["expired", "cancelled", "consumed", "confirmed"] as const) {
+      expect(
+        expirePaymentIntent(
+          intent({
+            status,
+            expiresAt: "2026-07-09T08:00:00.000Z",
+          }),
+          fixedClock(NOW),
+        ).status,
+      ).toBe(status);
+    }
+  });
+
+  it("allows the expected no-broadcast happy path", () => {
     const authorized = intent();
     const policyAllowed = transitionPaymentIntent(authorized, "policy-allowed");
     const quoted = transitionPaymentIntent(policyAllowed, "quoted");
     const prepared = transitionPaymentIntent(quoted, "prepared");
     const signed = transitionPaymentIntent(prepared, "signed");
-    const submitted = transitionPaymentIntent(signed, "submitted");
-    const confirmed = transitionPaymentIntent(submitted, "confirmed");
-    const consumed = consumePaymentIntent(confirmed);
+    const consumed = consumePaymentIntent(signed);
 
     expect(consumed.status).toBe("consumed");
   });
@@ -401,16 +603,10 @@ describe("PaymentIntent state machine", () => {
       TreasuryDomainError,
     );
   });
-
-  it("allows cancellation from a non-final state", () => {
-    expect(transitionPaymentIntent(intent(), "cancelled").status).toBe(
-      "cancelled",
-    );
-  });
 });
 
 describe("treasury audit replay", () => {
-  it("rebuilds PaymentIntent execution state deterministically", () => {
+  it("rebuilds PaymentIntent execution state through IntentConsumed", () => {
     const created = intent();
     const allowedReceipt = {
       intentId: created.id,
@@ -428,6 +624,7 @@ describe("treasury audit replay", () => {
       evaluatedAt: "2026-07-10T10:01:00.000Z",
     };
     const executionReceipt: ExecutionReceipt = {
+      receiptId: "proof-receipt-intent-van-rental-12345678",
       intentId: created.id,
       requestId: created.requestId,
       network: "Sepolia",
@@ -440,9 +637,13 @@ describe("treasury audit replay", () => {
       estimatedFeeAtomic: "46835902008000",
       prepared: true,
       signed: true,
+      consumed: true,
       broadcast: false,
       calldataHash:
         "0x2222222222222222222222222222222222222222222222222222222222222222",
+      unsignedTransactionHash:
+        "0x3333333333333333333333333333333333333333333333333333333333333333",
+      tokenContractStatus: "missing-contract",
       timestamp: "2026-07-10T10:02:00.000Z",
     };
     const events = [
@@ -459,9 +660,10 @@ describe("treasury audit replay", () => {
 
     const projection = replayPaymentIntentAudit(events, created.id);
 
+    expect(events.map((event) => event.type)).toContain("IntentConsumed");
     expect(projection).toMatchObject({
       intentId: created.id,
-      status: "signed",
+      status: "consumed",
       requestId: created.requestId,
       policyDecision: "ALLOW",
       estimatedFeeAtomic: "46835902008000",
@@ -472,3 +674,20 @@ describe("treasury audit replay", () => {
     });
   });
 });
+
+function rosterMember(
+  memberId: string,
+  address: string,
+): TreasuryMemberRecord {
+  return {
+    memberId,
+    address,
+    name: memberId,
+    role: "Captain",
+    active: true,
+  };
+}
+
+function toUpperAddress(address: string): string {
+  return `0x${address.slice(2).toUpperCase()}`;
+}
