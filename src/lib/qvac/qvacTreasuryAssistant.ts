@@ -184,7 +184,7 @@ export const qvacTreasuryAssistant = {
 
     if (normalized.includes("approval")) {
       if (pendingRequests.length === 0) {
-        return "There are no pending approvals. Approved match-day requests can move to simulated WDK payment.";
+        return "There are no pending approvals. Approved match-day requests can move to PaymentIntent and no-broadcast receipt preparation.";
       }
 
       return pendingRequests

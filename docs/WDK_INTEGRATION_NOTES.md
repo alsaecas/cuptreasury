@@ -197,9 +197,9 @@ Judge flow:
 4. Create a match-day expense.
 5. Check the Treasury Policy card for live rule application.
 6. Approve as Captain or Treasurer.
-7. Simulate payment execution.
+7. Prepare a safe no-broadcast receipt.
 8. Use "Generate Squad Reminder" or ask: "Who still owes money?"
-9. Run `npm run wdk:smoke` locally or check the CI workflow to verify the real WDK SDK path.
+9. Run `npm run wdk:smoke` and `npm run wdk:policy-demo` locally or check CI artifacts to verify the real WDK SDK path.
 
 ## Production WDK Next Steps
 

@@ -244,24 +244,20 @@ export function TreasuryApp() {
 
         return {
           ...current,
-          wallet: {
-            ...current.wallet,
-            balance: Math.max(current.wallet.balance - currentRequest.amount, 0),
-          },
           requests: current.requests.map((item) =>
             item.id === requestId
               ? {
                   ...item,
-                  status: "Paid",
-                  paidAt: result.executedAt,
+                  status: "Prepared",
+                  preparedAt: result.executedAt,
                   txHash: result.txHash,
                 }
               : item,
           ),
           activity: [
             createActivity(
-              "Simulated payment execution",
-              `${formatUsdT(currentRequest.amount)} paid for ${currentRequest.title}.`,
+              "Safe no-broadcast receipt",
+              `${formatUsdT(currentRequest.amount)} receipt prepared for ${currentRequest.title}.`,
               "green",
             ),
             ...current.activity,
@@ -272,12 +268,12 @@ export function TreasuryApp() {
       const message =
         error instanceof Error
           ? error.message
-          : "The WDK adapter could not simulate this payment.";
+          : "The WDK adapter could not prepare this receipt.";
 
       setTreasury((current) => ({
         ...current,
         activity: [
-          createActivity("Payment simulation failed", message, "red"),
+          createActivity("Receipt preparation failed", message, "red"),
           ...current.activity,
         ],
       }));

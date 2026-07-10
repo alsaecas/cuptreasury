@@ -7,6 +7,7 @@ export interface WdkAdapterStatus {
   label:
     | "Demo WDK adapter"
     | "WDK SDK installed; demo execution"
+    | "WDK SDK installed; Node/CI guarded proof"
     | "Real WDK integration";
   packageName: "@tetherto/wdk";
   sdkInstalled: boolean;
@@ -79,7 +80,7 @@ export const wdkTreasuryAdapter: WdkTreasuryAdapter = {
   getAdapterStatus() {
     return {
       mode: "demo",
-      label: "WDK SDK installed; demo execution",
+      label: "WDK SDK installed; Node/CI guarded proof",
       packageName: "@tetherto/wdk",
       sdkInstalled: true,
       realTransactionsEnabled: false,
@@ -91,12 +92,12 @@ export const wdkTreasuryAdapter: WdkTreasuryAdapter = {
         "Message signing and signature verification",
       ],
       summary:
-        "CupTreasury includes real WDK packages and a Node smoke test, while browser payment execution remains simulated for the judge demo.",
+        "CupTreasury includes real WDK packages, a Node smoke test, and a guarded WDK policy demo while browser payment execution remains visualized only.",
       notes: [
         "No seed phrase or private key is stored in React state or localStorage.",
         "Run npm run wdk:smoke to derive an ephemeral EVM wallet, read Sepolia balance, quote a zero-value transfer fee, and verify a signature.",
-        "Real USDt execution still requires secure key custody, token contract configuration, test funds, treasury policies, signing, and broadcasting.",
-        "The dashboard calls this adapter for payment preparation and execution, so simulated execution can be replaced without changing the UI flow.",
+        "Real token execution still requires secure key custody, token contract configuration, test funds, treasury policies, signing, and explicit broadcast controls.",
+        "The dashboard calls this adapter for payment-intent preparation and no-broadcast receipt visualization, so native WDK execution can stay in Node/CI.",
       ],
     };
   },
@@ -148,7 +149,7 @@ export const wdkTreasuryAdapter: WdkTreasuryAdapter = {
   async executePayment(payment) {
     await wait(500);
 
-    const txHash = `sim-usdt-${Date.now().toString(16)}`;
+    const txHash = `receipt-${Date.now().toString(16)}`;
 
     return {
       requestId: payment.requestId,
@@ -156,7 +157,7 @@ export const wdkTreasuryAdapter: WdkTreasuryAdapter = {
       status: "simulated",
       mode: payment.mode,
       message:
-        "Simulated payment execution. Real @tetherto/wdk packages are installed and verified by the Node smoke test, but this browser demo does not sign or broadcast treasury payments.",
+        "Safe demo receipt. Real @tetherto/wdk packages are installed and verified by the Node smoke test and guarded policy demo, but this browser view does not sign or broadcast treasury payments.",
       executedAt: new Date().toISOString(),
       explorerUrl: this.getExplorerUrl(txHash),
     };
@@ -170,5 +171,5 @@ export const wdkTreasuryAdapter: WdkTreasuryAdapter = {
 // Real WDK integration path:
 // 1. Keep seed material outside React component state and browser localStorage.
 // 2. Register the wallet manager, derive the treasury account, quote the payment,
-//    register local transaction policies, then execute a signed USDt transaction.
+//    register local transaction policies, then sign only inside a Node runtime.
 // 3. Keep the Node smoke test as a no-funds verification step for package health.

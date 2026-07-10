@@ -148,7 +148,7 @@ export function TreasuryOverview({
           <ShieldCheck size={16} className="text-lime-200" aria-hidden="true" />
           <span>
             Active role: {activeMember.role}. Payments require approval before
-            WDK simulation.
+            PaymentIntent preparation.
           </span>
         </div>
       </div>

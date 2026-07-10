@@ -1,6 +1,6 @@
 # CupTreasury
 
-CupTreasury is a self-custodial football team treasury for squads, fan groups, and tournament teams. It helps a team collect contributions, approve match-day expenses, simulate treasury payment execution, and explain status with a local deterministic assistant.
+CupTreasury is a self-custodial football team treasury for squads, fan groups, and tournament teams. It helps a team collect contributions, approve match-day expenses, turn approvals into exact WDK-guarded PaymentIntent capabilities, and prepare safe no-broadcast receipts.
 
 Live demo:
 https://cuptreasury.vercel.app/
@@ -17,9 +17,53 @@ https://github.com/alsaecas/cuptreasury
 
 WDK verification:
 
-- UI explanation: https://cuptreasury.vercel.app/wdk-proof
+- Guarded execution page: https://cuptreasury.vercel.app/guarded-execution
+- WDK proof page: https://cuptreasury.vercel.app/wdk-proof
 - CLI: `npm run wdk:smoke`
+- Policy proof: `npm run wdk:policy-demo`
+- Full local verification: `npm run semifinal:verify`
 - CI: [![WDK Smoke Verification](https://github.com/alsaecas/cuptreasury/actions/workflows/wdk-smoke.yml/badge.svg)](https://github.com/alsaecas/cuptreasury/actions/workflows/wdk-smoke.yml)
+
+## For semifinal judges
+
+Selected track: WDK only. QVAC is not claimed. Pear is not claimed.
+
+Real:
+
+- `@tetherto/wdk@1.0.0-beta.13`
+- `@tetherto/wdk-wallet-evm@1.0.0-beta.15`
+- WDK native account-scoped transaction policy registration
+- WDK native `account.simulate.signTransaction(...)` ALLOW/DENY decisions with trace
+- WDK Sepolia fee quote for prepared ERC-20 calldata
+- WDK no-broadcast transaction signing
+- Sanitized proof artifacts in CI
+
+Browser:
+
+- Visualizes the guarded execution proof and local treasury flow.
+- Does not execute native WDK wallet operations.
+- Does not sign or broadcast browser treasury payments.
+- Keeps wallet secrets out of React state and localStorage.
+
+### 3-minute review
+
+- Open `/guarded-execution`.
+- Skim this README architecture summary.
+- Run or inspect `npm run wdk:policy-demo`.
+
+### 10-minute technical review
+
+- Read `docs/SEMIFINAL_REVIEW.md` after the pinned-link commit is created.
+- Review `src/domain/treasury/**`.
+- Review `src/lib/wdk/guarded/**`.
+- Inspect CI proof artifacts from GitHub Actions.
+
+### Deep review
+
+- Read `docs/ARCHITECTURE.md`.
+- Read `docs/SECURITY_MODEL.md`.
+- Read `docs/WDK_API_RESEARCH.md`.
+- Review ADRs in `docs/adr/`.
 
 ## What It Does
 
@@ -30,15 +74,15 @@ CupTreasury gives the squad one browser-based treasury view:
 - Who paid and who still owes squad contributions
 - Which match-day expenses are pending
 - Captain and Treasurer approval flow
-- WDK-ready self-custodial payment boundary
+- WDK-guarded PaymentIntent capability boundary
 - Local assistant answers from local treasury data
-- In-app WDK verification proof page
+- In-app WDK verification and guarded execution proof pages
 
 The demo squad is Valencia Hackers FC at the Tether Developers Cup.
 
 ## Current Implementation
 
-- Polished landing page and `/treasury` judge flow
+- Polished landing page, `/treasury` judge flow, and `/guarded-execution`
 - In-app WDK proof verification at `/wdk-proof`
 - API endpoint at `/api/wdk/smoke` (returns honest status; WDK native addons prevent Vercel execution)
 - Valencia Hackers FC treasury dashboard
@@ -50,9 +94,10 @@ The demo squad is Valencia Hackers FC at the Tether Developers Cup.
   - Above 100 USDt requires two approvals
   - 100 USDt or below requires one approval
   - Only Captain and Treasurer can approve/reject
+- PaymentIntent domain model and approval policy tests
 - Payment policy card displaying live rule application
-- Demo payment execution after approvals
-- WDK wallet/payment panel with honest adapter status
+- Safe no-broadcast receipt preparation after approvals
+- WDK wallet/payment panel with honest Node/CI boundary status
 - Local deterministic assistant for treasury questions
 - Squad Reminder generator with copy-to-clipboard
 - localStorage persistence and reset demo data
@@ -63,8 +108,11 @@ WDK integration files:
 
 - `src/lib/wdk/wdkTreasuryAdapter.ts` — browser adapter boundary
 - `src/lib/wdk/wdkSmokeVerification.ts` — shared server-side smoke logic
+- `src/lib/wdk/guarded/**` — guarded PaymentIntent WDK policy pipeline
 - `scripts/wdk-smoke-test.ts` — CLI smoke test entry point
+- `scripts/wdk-policy-demo.ts` — ALLOW/DENY policy proof entry point
 - `src/app/api/wdk/smoke/route.ts` — in-app API endpoint
+- `src/app/guarded-execution/page.tsx` — guarded execution proof route
 - `src/components/wallet/WdkWalletPanel.tsx` — treasury WDK panel
 - `src/components/wallet/WdkProofClient.tsx` — WDK proof page UI
 - `src/app/wdk-proof/page.tsx` — WDK proof route
@@ -83,38 +131,47 @@ What is real:
 - `@tetherto/wdk` is installed.
 - `@tetherto/wdk-wallet-evm` is installed.
 - `scripts/wdk-smoke-test.ts` performs a no-funds Node smoke test.
+- `scripts/wdk-policy-demo.ts` performs native WDK policy simulation for exact PaymentIntent signing.
 - The shared module `src/lib/wdk/wdkSmokeVerification.ts` is used by both the CLI smoke test and the API route.
 - The smoke test generates an ephemeral seed phrase, registers an EVM wallet module, derives an account, reads Sepolia native balance through a public RPC, quotes a zero-value transaction fee, signs a message, verifies the signature, and disposes the WDK instance.
+- The policy demo creates a 120-unit van-rental request, denies one approval, allows the exact two-approval intent, denies changed amount and recipient, quotes the prepared ERC-20 calldata, signs without broadcasting, and writes sanitized JSON proof.
 - The live app includes a `/wdk-proof` page that explains WDK verification methods and links to the CLI smoke test.
+- The live app includes `/guarded-execution` to visualize the guarded proof and browser/Node boundary.
 - The `/api/wdk/smoke` endpoint is a serverless compatibility check that reports `unsupported_runtime` because WDK's sodium-native addon cannot be bundled for Vercel's serverless runtime.
-- A GitHub Actions WDK Smoke Verification workflow runs the smoke test on push, PR, and manual dispatch. See the CI badge above.
+- GitHub Actions run lint, build, tests, WDK smoke proof, and WDK policy proof with sanitized artifact upload.
 
 Run:
 
 ```bash
 npm run wdk:smoke
+npm run wdk:policy-demo
+npm run semifinal:verify
 ```
 
 Open in-app:
 
 ```
-https://cuptreasury.vercel.app/wdk-proof
+https://cuptreasury.vercel.app/guarded-execution
 ```
 
-What is still simulated:
+What remains browser-only:
 
-- Browser treasury payment execution is simulated.
-- No real USDt transaction is signed or broadcast by the app.
+- Browser treasury payment execution is not claimed.
+- Native WDK wallet operations run in Node/CI, not in Vercel browser UI.
+- No real token transaction is broadcast by default.
 - The dashboard balance is local demo state, not a live treasury balance.
 - The demo wallet address is a placeholder.
 - No seed phrase, private key, or real wallet material is stored in React state or localStorage.
 
 Why this matters:
 
-The app now demonstrates real WDK package installability and a minimal real SDK path without risking secret handling in the deployed MVP. Production payment execution still needs secure key custody, token contract configuration, testnet funds, treasury transaction policies, signing, broadcasting, and explorer tracking.
+The app now demonstrates real WDK package installability, native transaction-policy evaluation, exact PaymentIntent capability binding, fee quoting, and no-broadcast signing without risking secret handling in the deployed browser MVP. Production payment execution still needs durable server-side storage, secure key custody, token contract configuration, testnet funds, explicit broadcast controls, and explorer tracking.
 
 See:
 
+- `docs/ARCHITECTURE.md`
+- `docs/SECURITY_MODEL.md`
+- `docs/WDK_API_RESEARCH.md`
 - `docs/WDK_INTEGRATION_NOTES.md`
 - `docs/TRACK_COMPLIANCE.md`
 
@@ -175,7 +232,11 @@ Checks:
 ```bash
 npm run lint
 npm run build
+npm test
+npm run test:coverage
 npm run wdk:smoke
+npm run wdk:policy-demo
+npm run wdk:policy-demo:json
 ```
 
 The browser demo requires no environment variables.
@@ -195,9 +256,10 @@ WDK_SMOKE_EVM_CHAIN_ID=11155111
 4. Create a match-day expense.
 5. Approve it as Captain or Treasurer.
 6. Check the Treasury Policy card for live rule application.
-7. Simulate payment execution.
-8. Open /wdk-proof and review the WDK verification path.
-9. Ask the local assistant: "Who still owes money?" or use "Generate Squad Reminder".
+7. Prepare a safe no-broadcast receipt.
+8. Open /guarded-execution and review the WDK policy proof.
+9. Open /wdk-proof and review the WDK smoke path.
+10. Ask the local assistant: "Who still owes money?" or use "Generate Squad Reminder".
 
 ## Architecture
 
@@ -205,6 +267,7 @@ WDK_SMOKE_EVM_CHAIN_ID=11155111
 src/
   app/
     page.tsx
+    guarded-execution/page.tsx
     treasury/page.tsx
     wdk-proof/page.tsx
     api/wdk/smoke/route.ts
@@ -220,13 +283,18 @@ src/
     qvac/qvacTreasuryAssistant.ts
     treasury/treasuryRules.ts
     treasury/treasuryStorage.ts
+    wdk/guarded/
     wdk/wdkSmokeVerification.ts
     wdk/wdkTreasuryAdapter.ts
   types/
     treasury.ts
 scripts/
   wdk-smoke-test.ts
+  wdk-policy-demo.ts
 docs/
+  ARCHITECTURE.md
+  SECURITY_MODEL.md
+  WDK_API_RESEARCH.md
   TRACK_COMPLIANCE.md
   WDK_INTEGRATION_NOTES.md
 ```
@@ -248,6 +316,7 @@ Development dependencies:
 - ESLint
 - Next.js ESLint config
 - `tsx`
+- Vitest
 
 External services:
 
@@ -265,8 +334,9 @@ Pre-built UI kits:
 
 ## Known Limitations
 
-- Browser payment execution is simulated.
-- No real USDt transaction is signed or broadcast.
+- Browser payment execution is a visualization only.
+- No real token transaction is broadcast by default.
+- MockUSDT is a test-token label, not official USDt.
 - The `/api/wdk/smoke` endpoint returns `unsupported_runtime` status (WDK native addons cannot bundle for Vercel serverless).
 - QVAC SDK inference is not implemented.
 - No authentication.

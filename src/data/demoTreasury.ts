@@ -43,7 +43,7 @@ export const demoTreasuryState: TreasuryState = {
   },
   wallet: {
     id: "wallet-valencia-hackers",
-    status: "WDK SDK installed; demo execution",
+    status: "WDK SDK installed; Node/CI guarded proof",
     address: "0xCupT...FC26",
     network: "Demo EVM testnet placeholder",
     token: "USDt",

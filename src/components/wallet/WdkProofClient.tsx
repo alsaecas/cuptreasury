@@ -213,19 +213,19 @@ export function WdkProofClient() {
           <div className="flex items-start gap-3">
             <Info size={20} className="shrink-0 text-amber-200" aria-hidden="true" />
             <div>
-              <Badge tone="amber">Simulated execution</Badge>
+              <Badge tone="amber">Browser visualization</Badge>
               <h2 className="mt-3 text-2xl font-black text-white">
                 Browser treasury flow
               </h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-300">
                 CupTreasury&apos;s browser demo shows the intended football
-                treasury payment flow: request, approval, payment preparation,
-                and simulated execution. The browser payment execution is
-                simulated in the MVP. The real WDK proof currently lives in the
-                CLI/CI smoke test path.
+                treasury payment flow: request, approval, PaymentIntent,
+                policy evaluation, and safe receipt preparation. The browser
+                does not execute native WDK wallet operations. The real WDK
+                proof lives in the CLI/CI smoke and policy demo paths.
               </p>
               <ul className="mt-3 space-y-1 text-sm leading-6 text-amber-100/85">
-                <li>The browser MVP simulates USDt payment execution.</li>
+                <li>The browser visualizes a no-broadcast receipt path.</li>
                 <li>No real transaction is signed or broadcast in the browser.</li>
                 <li>The dashboard balance is local demo state.</li>
                 <li>

@@ -31,6 +31,7 @@ interface PaymentRequestsSectionProps {
 const statusTone = {
   Pending: "amber",
   Approved: "green",
+  Prepared: "blue",
   Rejected: "red",
   Paid: "blue",
 } as const;
@@ -187,7 +188,7 @@ export function PaymentRequestsSection({
                     disabled={!paymentAllowed || isBusy}
                     onClick={() => onSimulatePayment(request.id)}
                   >
-                    {isBusy ? "Simulating" : "Simulate Payment"}
+                    {isBusy ? "Preparing" : "Prepare Receipt"}
                   </Button>
                 </div>
               </div>
