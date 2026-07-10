@@ -40,6 +40,7 @@ export function canSimulatePayment(request: PaymentRequest): boolean {
   return (
     request.status !== "Paid" &&
     request.status !== "Rejected" &&
+    request.status !== "Prepared" &&
     hasEnoughApprovals(request)
   );
 }
@@ -87,6 +88,7 @@ export function getRoleDescription(role: MemberRole): string {
 export type PaymentPolicyStatus =
   | "waiting-for-approvals"
   | "ready-for-payment"
+  | "receipt-prepared"
   | "already-paid"
   | "rejected"
   | "blocked";
@@ -119,6 +121,7 @@ export function getPaymentPolicyStatus(
   request: PaymentRequest,
 ): PaymentPolicyStatus {
   if (request.status === "Paid") return "already-paid";
+  if (request.status === "Prepared") return "receipt-prepared";
   if (request.status === "Rejected") return "rejected";
 
   if (hasEnoughApprovals(request)) return "ready-for-payment";
@@ -133,7 +136,9 @@ export function getPaymentPolicyLabel(status: PaymentPolicyStatus): string {
     case "waiting-for-approvals":
       return "Policy: waiting for approvals";
     case "ready-for-payment":
-      return "Policy: ready for WDK payment preparation";
+      return "Policy: ready to create PaymentIntent";
+    case "receipt-prepared":
+      return "Policy: safe no-broadcast receipt prepared";
     case "already-paid":
       return "Policy: already paid";
     case "rejected":

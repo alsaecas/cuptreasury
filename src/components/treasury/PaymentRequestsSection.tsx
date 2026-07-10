@@ -31,6 +31,7 @@ interface PaymentRequestsSectionProps {
 const statusTone = {
   Pending: "amber",
   Approved: "green",
+  Prepared: "blue",
   Rejected: "red",
   Paid: "blue",
 } as const;
@@ -114,9 +115,9 @@ export function PaymentRequestsSection({
                   <p className="mt-2 text-sm text-zinc-500">
                     {request.approvals.length}/{approvalsRequired} approvals
                   </p>
-                  {request.txHash ? (
+                  {request.receiptId ? (
                     <p className="mt-2 font-mono text-xs text-cyan-200">
-                      {request.txHash}
+                      Receipt ID: {request.receiptId}
                     </p>
                   ) : null}
                 </div>
@@ -187,7 +188,7 @@ export function PaymentRequestsSection({
                     disabled={!paymentAllowed || isBusy}
                     onClick={() => onSimulatePayment(request.id)}
                   >
-                    {isBusy ? "Simulating" : "Simulate Payment"}
+                    {isBusy ? "Preparing" : "Prepare Receipt"}
                   </Button>
                 </div>
               </div>

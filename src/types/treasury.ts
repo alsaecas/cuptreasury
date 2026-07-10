@@ -5,6 +5,7 @@ export type ContributionStatus = "Paid" | "Pending" | "Partial";
 export type PaymentRequestStatus =
   | "Pending"
   | "Approved"
+  | "Prepared"
   | "Rejected"
   | "Paid";
 
@@ -22,6 +23,7 @@ export type AiRiskLevel = "Normal" | "Review" | "Unusual";
 export type WalletStatus =
   | "Demo WDK adapter"
   | "WDK SDK installed; demo execution"
+  | "WDK SDK installed; Node/CI guarded proof"
   | "Real WDK integration";
 
 export interface Member {
@@ -63,7 +65,8 @@ export interface PaymentRequest {
   aiNote: string;
   createdAt: string;
   paidAt?: string;
-  txHash?: string;
+  preparedAt?: string;
+  receiptId?: string;
 }
 
 export interface TreasuryActivity {

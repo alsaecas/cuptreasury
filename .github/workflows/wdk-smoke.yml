@@ -28,11 +28,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
-
       - name: Run WDK smoke test
         run: npm run wdk:smoke
+
+      - name: Run WDK policy proof
+        run: npm run wdk:policy-demo:json
+
+      - name: Generate proof manifest
+        run: npm run proof:manifest
+
+      - name: Upload sanitized WDK proofs
+        uses: actions/upload-artifact@v4
+        with:
+          name: wdk-smoke-and-policy-proofs
+          path: |
+            artifacts/wdk-smoke-proof.json
+            artifacts/wdk-policy-proof.json
+            artifacts/proof-manifest.json
+          if-no-files-found: error

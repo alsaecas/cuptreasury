@@ -45,7 +45,7 @@ export function WdkWalletPanel({
             {adapterStatus.label}
           </Badge>
           <h2 className="mt-4 text-xl font-bold text-white">
-            WDK-ready wallet flow
+            WDK guarded execution flow
           </h2>
           <p className="mt-1 text-sm leading-6 text-zinc-500">
             Self-custodial treasury boundary for squad payments
@@ -61,8 +61,8 @@ export function WdkWalletPanel({
           </p>
           <p className="mt-2 text-sm leading-6 text-lime-50/75">
             CupTreasury does not custody team funds in this MVP. The adapter
-            models the wallet/payment flow while real treasury signing remains
-            a documented integration step.
+            models the intent, policy, quote, and receipt flow while real WDK
+            native execution remains in Node/CI.
           </p>
         </div>
 
@@ -73,16 +73,25 @@ export function WdkWalletPanel({
             </p>
             <p className="mt-2 text-sm leading-6 text-zinc-300">
               CupTreasury verifies the WDK wallet path through a real CLI/CI
-              smoke test. The browser MVP keeps treasury payment execution
-              simulated while showing the intended self-custodial flow.
+              smoke test and guarded policy demo. The browser visualizes the
+              result without signing or broadcasting treasury payments.
             </p>
-            <Link
-              href="/wdk-proof"
-              className="mt-3 inline-flex items-center gap-2 rounded-md border border-lime-300/30 bg-lime-300/10 px-3 py-2 text-xs font-semibold text-lime-100 transition-colors hover:bg-lime-300/20"
-            >
-              <ShieldCheck size={14} aria-hidden="true" />
-              View WDK Verification
-            </Link>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link
+                href="/guarded-execution"
+                className="inline-flex items-center gap-2 rounded-md border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/20"
+              >
+                <ShieldCheck size={14} aria-hidden="true" />
+                Guarded Execution
+              </Link>
+              <Link
+                href="/wdk-proof"
+                className="inline-flex items-center gap-2 rounded-md border border-lime-300/30 bg-lime-300/10 px-3 py-2 text-xs font-semibold text-lime-100 transition-colors hover:bg-lime-300/20"
+              >
+                <ShieldCheck size={14} aria-hidden="true" />
+                WDK Verification
+              </Link>
+            </div>
           </div>
         ) : null}
 
@@ -120,8 +129,8 @@ export function WdkWalletPanel({
           className="w-full"
         >
           {busyRequestId === nextPayment?.id
-            ? "Simulating WDK Payment"
-            : "Simulate WDK Payment"}
+            ? "Preparing Receipt"
+            : "Prepare No-Broadcast Receipt"}
         </Button>
 
         {nextPayment ? (
@@ -137,10 +146,13 @@ export function WdkWalletPanel({
         {transactionResult ? (
           <div className="rounded-lg border border-cyan-300/30 bg-cyan-300/10 p-4">
             <p className="text-sm font-semibold text-cyan-100">
-              Simulated transaction result
+              Safe demo receipt
+            </p>
+            <p className="mt-2 text-xs font-semibold uppercase text-cyan-50/60">
+              Receipt ID
             </p>
             <p className="mt-2 font-mono text-xs text-cyan-100">
-              {transactionResult.txHash}
+              {transactionResult.receiptId}
             </p>
             <p className="mt-2 text-sm leading-6 text-cyan-50/80">
               {transactionResult.message}

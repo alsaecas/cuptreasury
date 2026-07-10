@@ -64,7 +64,7 @@ export function TreasuryPolicyCard({ state }: TreasuryPolicyCardProps) {
         <li className="flex items-start gap-2">
           <span className="mt-0.5 shrink-0 text-amber-200">•</span>
           <span className="text-zinc-400">
-            Browser execution is simulated in the MVP.
+            Browser receipt preparation mirrors the native WDK policy proof.
           </span>
         </li>
       </ul>
@@ -77,7 +77,7 @@ export function TreasuryPolicyCard({ state }: TreasuryPolicyCardProps) {
           </span>
         </div>
         <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-          <span className="text-zinc-400">Ready for payment</span>
+          <span className="text-zinc-400">Ready for PaymentIntent</span>
           <span className="font-mono font-semibold text-lime-100">
             {approvedUnpaid.length}
           </span>

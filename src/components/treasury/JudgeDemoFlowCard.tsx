@@ -25,8 +25,8 @@ const steps = [
   },
   {
     icon: MessageSquareText,
-    title: "Simulate payment and ask who owes money",
-    detail: "Run the demo payment path and query the local assistant.",
+    title: "Prepare receipt and ask who owes money",
+    detail: "Run the no-broadcast receipt path and query the local assistant.",
   },
 ];
 

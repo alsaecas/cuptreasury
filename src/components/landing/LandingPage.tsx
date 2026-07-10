@@ -45,7 +45,7 @@ export function LandingPage() {
                 <span>Local deterministic assistant; no QVAC track claim</span>
               </div>
             </div>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href="/treasury"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-lime-300 bg-lime-300 px-5 py-3 text-sm font-bold text-zinc-950 transition-colors hover:bg-lime-200"
@@ -66,6 +66,13 @@ export function LandingPage() {
               >
                 <ShieldCheck size={18} aria-hidden="true" />
                 See WDK Verification
+              </Link>
+              <Link
+                href="/guarded-execution"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-cyan-300/30 bg-cyan-300/10 px-5 py-3 text-sm font-bold text-cyan-50 transition-colors hover:bg-cyan-300/20"
+              >
+                <ShieldCheck size={18} aria-hidden="true" />
+                Guarded Execution
               </Link>
             </div>
           </div>
@@ -122,12 +129,12 @@ export function LandingPage() {
           {
             icon: Wallet,
             title: "Self-custodial team treasury",
-            copy: "CupTreasury does not custody team funds. The WDK packages are installed and verified by a no-funds Node smoke test.",
+            copy: "CupTreasury does not custody team funds. The WDK packages are installed and verified by no-funds Node smoke and policy proof scripts.",
           },
           {
             icon: ShieldCheck,
-            title: "Role-based approvals",
-            copy: "Captain and Treasurer approvals are enforced in the treasury rules before any payment can be simulated.",
+            title: "Guarded payment capability",
+            copy: "Captain and Treasurer approvals create an exact PaymentIntent that WDK policy simulation can allow or deny.",
           },
           {
             icon: Bot,
