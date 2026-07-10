@@ -8,11 +8,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "wdk:smoke": "tsx scripts/wdk-smoke-test.ts"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "wdk:smoke": "tsx scripts/wdk-smoke-test.ts",
+    "wdk:policy-demo": "tsx scripts/wdk-policy-demo.ts",
+    "wdk:policy-demo:json": "tsx scripts/wdk-policy-demo.ts --json",
+    "semifinal:verify": "npm run lint && npm run build && npm test && npm run test:coverage && npm run wdk:smoke && npm run wdk:policy-demo && npm run wdk:policy-demo:json"
   },
   "dependencies": {
     "@tetherto/wdk": "^1.0.0-beta.13",
     "@tetherto/wdk-wallet-evm": "^1.0.0-beta.15",
+    "ethers": "^6.17.0",
     "lucide-react": "^1.23.0",
     "next": "16.2.10",
     "react": "19.2.4",
@@ -23,11 +30,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.10",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
     "tsx": "^4.23.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

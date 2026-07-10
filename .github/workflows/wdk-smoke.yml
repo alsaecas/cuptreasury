@@ -36,3 +36,15 @@ jobs:
 
       - name: Run WDK smoke test
         run: npm run wdk:smoke
+
+      - name: Run WDK policy proof
+        run: npm run wdk:policy-demo:json
+
+      - name: Upload sanitized WDK proofs
+        uses: actions/upload-artifact@v4
+        with:
+          name: wdk-smoke-and-policy-proofs
+          path: |
+            artifacts/wdk-smoke-proof.json
+            artifacts/wdk-policy-proof.json
+          if-no-files-found: error
