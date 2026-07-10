@@ -209,5 +209,5 @@ Judge flow:
 4. Add WDK transaction policies that reflect Captain/Treasurer approvals.
 5. Replace `executePayment()` with real WDK token transfer signing.
 6. Broadcast only in explicit testnet mode.
-7. Return real transaction hashes and explorer URLs.
+7. Return real transaction hashes and explorer URLs only for explicit future broadcast flows; no-broadcast demo flows return receipt identifiers.
 8. Add automated tests around policy approval and transaction preparation.

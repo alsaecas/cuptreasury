@@ -52,7 +52,7 @@ export interface PreparedPayment {
 
 export interface ExecutedPayment {
   requestId: string;
-  txHash: string;
+  receiptId: string;
   status: "simulated" | "submitted" | "confirmed";
   mode: WdkAdapterMode;
   message: string;
@@ -69,7 +69,7 @@ export interface WdkTreasuryAdapter {
     wallet: WalletInfo,
   ): PreparedPayment;
   executePayment(payment: PreparedPayment): Promise<ExecutedPayment>;
-  getExplorerUrl(txHash: string): string | null;
+  getExplorerUrl(receiptId: string): string | null;
 }
 
 function wait(ms: number): Promise<void> {
@@ -149,17 +149,17 @@ export const wdkTreasuryAdapter: WdkTreasuryAdapter = {
   async executePayment(payment) {
     await wait(500);
 
-    const txHash = `receipt-${Date.now().toString(16)}`;
+    const receiptId = `receipt-${Date.now().toString(16)}`;
 
     return {
       requestId: payment.requestId,
-      txHash,
+      receiptId,
       status: "simulated",
       mode: payment.mode,
       message:
         "Safe demo receipt. Real @tetherto/wdk packages are installed and verified by the Node smoke test and guarded policy demo, but this browser view does not sign or broadcast treasury payments.",
       executedAt: new Date().toISOString(),
-      explorerUrl: this.getExplorerUrl(txHash),
+      explorerUrl: this.getExplorerUrl(receiptId),
     };
   },
 

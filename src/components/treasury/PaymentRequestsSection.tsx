@@ -115,9 +115,9 @@ export function PaymentRequestsSection({
                   <p className="mt-2 text-sm text-zinc-500">
                     {request.approvals.length}/{approvalsRequired} approvals
                   </p>
-                  {request.txHash ? (
+                  {request.receiptId ? (
                     <p className="mt-2 font-mono text-xs text-cyan-200">
-                      {request.txHash}
+                      Receipt ID: {request.receiptId}
                     </p>
                   ) : null}
                 </div>

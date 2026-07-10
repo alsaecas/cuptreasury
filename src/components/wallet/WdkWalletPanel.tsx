@@ -148,8 +148,11 @@ export function WdkWalletPanel({
             <p className="text-sm font-semibold text-cyan-100">
               Safe demo receipt
             </p>
+            <p className="mt-2 text-xs font-semibold uppercase text-cyan-50/60">
+              Receipt ID
+            </p>
             <p className="mt-2 font-mono text-xs text-cyan-100">
-              {transactionResult.txHash}
+              {transactionResult.receiptId}
             </p>
             <p className="mt-2 text-sm leading-6 text-cyan-50/80">
               {transactionResult.message}

@@ -250,7 +250,7 @@ export function TreasuryApp() {
                   ...item,
                   status: "Prepared",
                   preparedAt: result.executedAt,
-                  txHash: result.txHash,
+                  receiptId: result.receiptId,
                 }
               : item,
           ),

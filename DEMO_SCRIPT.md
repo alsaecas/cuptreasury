@@ -26,7 +26,7 @@ Open `/guarded-execution`.
 
 Point to the flow.
 
-"The flow is: PaymentRequest, domain approval policy, immutable PaymentIntent, WDK policy evaluation, quote and prepare, then a safe no-broadcast receipt."
+"The flow is: PaymentRequest, domain approval policy using atomic token amounts and a trusted roster, immutable PaymentIntent, WDK policy evaluation, provider-derived preparation, no-broadcast signing, application-owned consumption, then a safe receipt."
 
 Point to the PaymentIntent hash.
 
@@ -38,7 +38,7 @@ Point to the policy table.
 
 Point to the WDK proof panel.
 
-"Under the hood, the Node proof uses real `@tetherto/wdk` and `@tetherto/wdk-wallet-evm`. It registers an account-scoped WDK transaction policy, calls WDK's native `account.simulate.signTransaction(...)`, quotes the prepared ERC-20 calldata on Sepolia, and signs without broadcasting."
+"Under the hood, the Node proof uses real `@tetherto/wdk` and `@tetherto/wdk-wallet-evm`. It registers account-scoped WDK transaction policies, calls WDK's native `account.simulate.signTransaction(...)`, derives nonce/gas/fee fields from the configured provider, signs without broadcasting, and records when the placeholder token cannot support a functional ERC-20 quote."
 
 Open or mention terminal commands.
 
@@ -54,4 +54,4 @@ Show `/wdk-proof`.
 
 Close on `/guarded-execution`.
 
-"CupTreasury is submitted for the WDK-only track. It does not claim QVAC or Pear. The semifinal upgrade is exact guarded execution: approved football expenses become one-time WDK payment capabilities, and changed transactions are rejected before signing."
+"CupTreasury is submitted for the WDK-only track. It does not claim QVAC or Pear. The semifinal upgrade is exact guarded execution: approved football expenses become application-consumed one-time WDK payment capabilities, and changed or replayed transactions are rejected before signing."

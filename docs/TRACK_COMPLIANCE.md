@@ -109,7 +109,7 @@ API route behavior:
 - The endpoint does not import WDK at build time, so the app compiles and deploys without native addon bundling failures.
 - The official verification paths are `npm run wdk:smoke` (CLI) and the GitHub Actions WDK Smoke Verification workflow (CI).
 
-Real token execution still requires secure key custody, durable intent storage, provider/testnet configuration, token contract configuration, test funds, explicit broadcast controls, and explorer tracking. The current guarded path signs without broadcasting and uses MockUSDT as a test-token label.
+Real token execution still requires secure key custody, durable transactional intent consumption, provider/testnet configuration, real token contract configuration, test funds, explicit broadcast controls, and explorer tracking. The current guarded path signs without broadcasting, uses MockUSDT as a test-token label, and marks the Sepolia placeholder as `missing-contract`.
 
 ## QVAC Integration Status
 

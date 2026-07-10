@@ -66,7 +66,7 @@ export interface PaymentRequest {
   createdAt: string;
   paidAt?: string;
   preparedAt?: string;
-  txHash?: string;
+  receiptId?: string;
 }
 
 export interface TreasuryActivity {

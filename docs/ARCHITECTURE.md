@@ -31,17 +31,21 @@ sequenceDiagram
   participant Policy as Domain approval policy
   participant Intent as Immutable PaymentIntent
   participant WDK as WDK account policy
-  participant Quote as WDK fee quote
+  participant Prepare as Provider-derived preparation
+  participant Quote as WDK fee quote attempt
   participant Sign as WDK signing
+  participant Store as Consumption store
   participant Receipt as ExecutionReceipt
 
-  Request->>Policy: Evaluate role threshold and lifecycle
+  Request->>Policy: Evaluate atomic amount threshold, trusted roster, and lifecycle
   Policy->>Intent: Create exact capability when approved
-  Intent->>WDK: Prepared ERC-20 signTransaction candidate
+  Intent->>Prepare: Build exact unsigned transaction
+  Prepare->>WDK: signTransaction candidate
   WDK-->>Intent: ALLOW or DENY with trace
-  WDK->>Quote: quoteSendTransaction for allowed calldata
+  WDK->>Quote: quoteSendTransaction when supported
   WDK->>Sign: signTransaction without broadcast
-  Sign-->>Receipt: prepared:true signed:true broadcast:false
+  Sign->>Store: consume intent after successful signing
+  Store-->>Receipt: prepared:true signed:true consumed:true broadcast:false
 ```
 
 ## Runtime Boundaries
@@ -94,9 +98,9 @@ Trade-off: Policy conditions are application-owned JavaScript predicates. CupTre
 
 Package: `@tetherto/wdk-wallet-evm@1.0.0-beta.15`
 
-Why selected: CupTreasury targets an EVM treasury flow and needs Sepolia fee quotes, ERC-20 calldata, and no-broadcast transaction signing.
+Why selected: CupTreasury targets an EVM treasury flow and needs provider-derived EVM transaction fields, ERC-20 calldata, WDK fee-quote attempts, and no-broadcast transaction signing.
 
-How implemented: The proof prepares ERC-20 `transfer(address,uint256)` calldata, dry-runs it through WDK `account.simulate.signTransaction(...)`, quotes it through `quoteSendTransaction`, and optionally signs it through `signTransaction` without broadcasting.
+How implemented: The proof prepares ERC-20 `transfer(address,uint256)` calldata, derives nonce, gas, fee fields, and chain id from the configured provider, dry-runs the exact candidate through WDK `account.simulate.signTransaction(...)`, attempts `quoteSendTransaction`, and signs through `signTransaction` without broadcasting. The placeholder token has no bytecode and is explicitly marked `missing-contract`.
 
 Trade-off: There is no public `prepareTransaction` API in this beta, so CupTreasury prepares the deterministic unsigned transaction in its adapter and clearly labels that as app-level preparation.
 
@@ -106,7 +110,7 @@ Package: `@tetherto/wdk@1.0.0-beta.13`
 
 Why selected: It is the differentiator for this semifinal submission. An approved expense becomes an exact WDK-governed signing capability.
 
-How implemented: `createPaymentIntentPolicy()` registers a default-deny account-scoped policy. The ALLOW rule matches only the exact prepared transaction for the immutable PaymentIntent. Non-executable lifecycle states are explicitly denied.
+How implemented: `createPaymentIntentPolicy()` registers a default-deny account-scoped policy. The ALLOW rule matches only the exact prepared transaction for the immutable PaymentIntent, calls the injected clock on each evaluation, and checks the application consumption store. Non-executable lifecycle states are explicitly denied. The ALLOW rule does not bypass broader project DENY policies.
 
 Trade-off: Quote methods are read-only and not policy-wrapped, so CupTreasury evaluates WDK policy before quoting.
 

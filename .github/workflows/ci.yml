@@ -34,19 +34,10 @@ jobs:
         run: npm run build
 
       - name: Test
-        run: npm test
+        run: npm run test:coverage
 
-      - name: Run WDK smoke proof
-        run: npm run wdk:smoke
-
-      - name: Run WDK policy proof
+      - name: Generate WDK policy proof
         run: npm run wdk:policy-demo:json
 
-      - name: Upload sanitized WDK proofs
-        uses: actions/upload-artifact@v4
-        with:
-          name: wdk-semifinal-proofs
-          path: |
-            artifacts/wdk-smoke-proof.json
-            artifacts/wdk-policy-proof.json
-          if-no-files-found: error
+      - name: Check generated browser proof fixture
+        run: npm run guarded-proof:check

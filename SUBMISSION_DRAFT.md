@@ -6,7 +6,7 @@ CupTreasury
 
 ## Short Description
 
-CupTreasury is a self-custodial football team treasury for squads and fan groups. It helps teams collect contributions, approve match-day expenses, and turn approved football expenses into exact, one-time WDK-guarded PaymentIntent capabilities with safe no-broadcast receipts.
+CupTreasury is a self-custodial football team treasury for squads and fan groups. It helps teams collect contributions, approve match-day expenses, and turn approved football expenses into exact WDK-governed PaymentIntent capabilities with application-owned one-time consumption and safe no-broadcast receipts.
 
 ## Nation
 
@@ -49,8 +49,8 @@ Real WDK work completed:
 - Added a React-independent treasury domain model for approval policy, immutable PaymentIntent capabilities, exact hashing, state transitions, receipts, and audit replay.
 - Added `src/lib/wdk/guarded/**` for native WDK account-scoped policy registration and ALLOW/DENY evaluation.
 - Added `scripts/wdk-policy-demo.ts`, `npm run wdk:policy-demo`, and `npm run wdk:policy-demo:json`.
-- The policy demo denies a one-approval 120-unit request, allows the exact two-approval PaymentIntent, denies changed amount and recipient, quotes the prepared ERC-20 transaction, signs without broadcasting, and writes sanitized proof JSON.
-- Added `/guarded-execution` to show the guarded execution proof, exact intent hash, ALLOW/DENY table, fee quote, prepared/signed state, audit journal, and browser/Node runtime boundary.
+- The policy demo denies a one-approval 120-token request, allows the exact two-approval PaymentIntent, denies changed amount, recipient, token, chain, account, expiry, and replay attempts, signs without broadcasting, and writes sanitized proof JSON.
+- Added `/guarded-execution` to show the generated guarded execution proof, exact intent hash, ALLOW/DENY/SIGNED table, provider-derived transaction fields, placeholder-token status, audit journal, artifact provenance, and browser/Node runtime boundary.
 - Added a WDK Verification Methods page at `/wdk-proof` with three sections: CLI/CI smoke test, browser flow, and serverless compatibility check.
 - Updated GitHub Actions to run lint, build, tests, WDK smoke proof, WDK policy proof, and upload sanitized artifacts.
 - Added a `/api/wdk/smoke` endpoint as a serverless compatibility check that returns `unsupported_runtime` status (WDK native addons cannot bundle for Vercel serverless).
@@ -64,7 +64,7 @@ What remains browser-only:
 - The visible treasury balance is local demo state, not a live on-chain balance.
 - No seed phrase or private key is committed, displayed, or stored in browser localStorage.
 
-Production WDK integration would add durable server-side intent storage, secure wallet material handling, test token or real token configuration, explicit broadcast controls, and explorer tracking.
+Production WDK integration would add durable transactional intent consumption, secure wallet material handling, real token configuration, explicit broadcast controls, and explorer tracking.
 
 ## How It Uses QVAC
 

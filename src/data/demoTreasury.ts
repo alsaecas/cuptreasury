@@ -139,7 +139,7 @@ export const demoTreasuryState: TreasuryState = {
       aiNote: "Equipment spend is below the single-approval threshold.",
       createdAt: "2026-07-04T11:10:00.000Z",
       paidAt: "2026-07-04T11:42:00.000Z",
-      txHash: "sim-usdt-4f45",
+      receiptId: "receipt-sim-usdt-4f45",
     },
   ],
   activity: [

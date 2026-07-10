@@ -4,6 +4,7 @@ import {
   FileCheck2,
   Fingerprint,
   KeyRound,
+  LinkIcon,
   ReceiptText,
   ShieldCheck,
   Terminal,
@@ -12,7 +13,7 @@ import {
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/Badge";
-import { guardedExecutionProof } from "@/data/guardedExecutionProof";
+import { guardedExecutionProof } from "@/data/generated/guardedExecutionProof.generated";
 
 const flowSteps = [
   "PaymentRequest",
@@ -81,20 +82,20 @@ export default function GuardedExecutionPage() {
             </h2>
           </div>
           <div className="mt-4 grid gap-4">
-            <ProofRow
-              icon={<ReceiptText size={18} aria-hidden="true" />}
-              label="Payment request"
-              value={`${guardedExecutionProof.request.title} · ${guardedExecutionProof.request.amountUnits} ${guardedExecutionProof.request.tokenSymbol}`}
-            />
-            <ProofRow
-              icon={<Fingerprint size={18} aria-hidden="true" />}
-              label="Intent hash"
-              value={guardedExecutionProof.intent.hash}
-              mono
-            />
-            <ProofRow
-              icon={<KeyRound size={18} aria-hidden="true" />}
-              label="Ephemeral WDK account"
+              <ProofRow
+                icon={<ReceiptText size={18} aria-hidden="true" />}
+                label="Payment request"
+                value={`${guardedExecutionProof.request.displayAmount} ${guardedExecutionProof.request.tokenSymbol} · atomic ${guardedExecutionProof.request.amountAtomic}`}
+              />
+              <ProofRow
+                icon={<Fingerprint size={18} aria-hidden="true" />}
+                label="Intent hash"
+                value={guardedExecutionProof.capability.hash}
+                mono
+              />
+              <ProofRow
+                icon={<KeyRound size={18} aria-hidden="true" />}
+                label="Ephemeral WDK account"
               value={guardedExecutionProof.safeEphemeralAddress}
               mono
             />
@@ -113,8 +114,12 @@ export default function GuardedExecutionPage() {
               />
               <ProofStat label="Network" value={guardedExecutionProof.network} />
               <ProofStat
+                label="Capability schema"
+                value={`v${guardedExecutionProof.capability.version}`}
+              />
+              <ProofStat
                 label="Fee quote"
-                value={`${guardedExecutionProof.feeQuote.estimatedFeeAtomic} wei`}
+                value={formatFeeQuote(guardedExecutionProof.feeQuote)}
               />
               <ProofStat
                 label="Prepared"
@@ -123,6 +128,10 @@ export default function GuardedExecutionPage() {
               <ProofStat
                 label="Broadcast"
                 value={String(guardedExecutionProof.executionReceipt.broadcast)}
+              />
+              <ProofStat
+                label="Secrets persisted"
+                value={String(guardedExecutionProof.secretsPersisted)}
               />
             </dl>
             <code className="mt-4 block rounded-md border border-cyan-300/20 bg-black/50 px-3 py-2 font-mono text-xs text-cyan-100">
@@ -145,30 +154,30 @@ export default function GuardedExecutionPage() {
                 </tr>
               </thead>
               <tbody>
-                {guardedExecutionProof.policyDecisions.map((item) => (
-                  <tr key={item.scenario} className="border-t border-white/10">
+                {guardedExecutionProof.scenarios.map((item) => (
+                  <tr key={item.id} className="border-t border-white/10">
                     <td className="px-4 py-3">
                       <p className="font-semibold text-zinc-100">
-                        {item.scenario}
+                        {item.title}
                       </p>
                       <p className="mt-1 text-xs leading-5 text-zinc-500">
-                        {item.detail}
+                        {item.reason}
                       </p>
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={
-                          item.result === "ALLOW"
+                          item.outcome === "ALLOW" || item.outcome === "SIGNED"
                             ? "inline-flex items-center gap-1 rounded-md border border-lime-300/30 bg-lime-300/10 px-2 py-1 text-xs font-bold text-lime-100"
                             : "inline-flex items-center gap-1 rounded-md border border-red-300/30 bg-red-300/10 px-2 py-1 text-xs font-bold text-red-100"
                         }
                       >
-                        {item.result === "ALLOW" ? (
+                        {item.outcome === "ALLOW" || item.outcome === "SIGNED" ? (
                           <CheckCircle2 size={13} aria-hidden="true" />
                         ) : (
                           <Ban size={13} aria-hidden="true" />
                         )}
-                        {item.result}
+                        {item.outcome}
                       </span>
                     </td>
                   </tr>
@@ -194,6 +203,48 @@ export default function GuardedExecutionPage() {
           </div>
         </div>
 
+        <div className="rounded-lg border border-white/10 bg-zinc-950 p-5">
+          <h2 className="text-xl font-bold text-white">Proof provenance</h2>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+            <ProofStat label="Generated" value={guardedExecutionProof.generatedAt} />
+            <ProofStat
+              label="Source commit"
+              value={guardedExecutionProof.sourceCommit}
+            />
+            <ProofStat
+              label="Artifact SHA-256"
+              value={guardedExecutionProof.proofArtifactSha256}
+            />
+            <ProofStat
+              label="Content hash"
+              value={guardedExecutionProof.proofContentHash}
+            />
+            <ProofStat
+              label="Token bytecode"
+              value={guardedExecutionProof.prepared.tokenContract.status}
+            />
+            <ProofStat
+              label="Gas limit"
+              value={
+                guardedExecutionProof.prepared.providerDerived?.gasLimit ?? "n/a"
+              }
+            />
+          </dl>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <ProofLink href="https://github.com/alsaecas/cuptreasury/pull/9">
+              PR #9
+            </ProofLink>
+            <ProofLink href="https://github.com/alsaecas/cuptreasury/actions/workflows/wdk-smoke.yml">
+              WDK workflow
+            </ProofLink>
+            <ProofLink href="/docs/SEMIFINAL_REVIEW.md">
+              Judge guide
+            </ProofLink>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-10 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:px-10">
         <div className="rounded-lg border border-amber-300/20 bg-amber-300/[0.06] p-5">
           <h2 className="text-xl font-bold text-white">Runtime boundary</h2>
           <ul className="mt-4 grid gap-2 text-sm leading-6 text-amber-50/85 sm:grid-cols-2">
@@ -246,5 +297,32 @@ function ProofStat({ label, value }: { label: string; value: string }) {
         {value}
       </dd>
     </div>
+  );
+}
+
+function formatFeeQuote(feeQuote: {
+  status: string;
+  estimatedFeeAtomic?: string;
+}): string {
+  return feeQuote.status === "quoted" && feeQuote.estimatedFeeAtomic
+    ? `${feeQuote.estimatedFeeAtomic} wei`
+    : "Unsupported for placeholder token";
+}
+
+function ProofLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-zinc-100 transition-colors hover:bg-white/10"
+    >
+      <LinkIcon size={14} aria-hidden="true" />
+      {children}
+    </Link>
   );
 }

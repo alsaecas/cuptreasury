@@ -34,8 +34,10 @@ Real:
 - `@tetherto/wdk-wallet-evm@1.0.0-beta.15`
 - WDK native account-scoped transaction policy registration
 - WDK native `account.simulate.signTransaction(...)` ALLOW/DENY decisions with trace
-- WDK Sepolia fee quote for prepared ERC-20 calldata
+- Provider-derived unsigned transaction fields for the prepared calldata
+- Honest WDK fee-quote status; placeholder-token quotes may be unsupported
 - WDK no-broadcast transaction signing
+- Application-owned one-time PaymentIntent consumption
 - Sanitized proof artifacts in CI
 
 Browser:
@@ -134,11 +136,11 @@ What is real:
 - `scripts/wdk-policy-demo.ts` performs native WDK policy simulation for exact PaymentIntent signing.
 - The shared module `src/lib/wdk/wdkSmokeVerification.ts` is used by both the CLI smoke test and the API route.
 - The smoke test generates an ephemeral seed phrase, registers an EVM wallet module, derives an account, reads Sepolia native balance through a public RPC, quotes a zero-value transaction fee, signs a message, verifies the signature, and disposes the WDK instance.
-- The policy demo creates a 120-unit van-rental request, denies one approval, allows the exact two-approval intent, denies changed amount and recipient, quotes the prepared ERC-20 calldata, signs without broadcasting, and writes sanitized JSON proof.
+- The policy demo creates a 120-token van-rental request, validates approvals against a trusted roster, denies one approval, allows the exact two-approval intent, denies changed amount, recipient, token, chain, account, expiry, and replay changes, signs the exact no-broadcast transaction once, and writes sanitized JSON proof.
 - The live app includes a `/wdk-proof` page that explains WDK verification methods and links to the CLI smoke test.
 - The live app includes `/guarded-execution` to visualize the guarded proof and browser/Node boundary.
 - The `/api/wdk/smoke` endpoint is a serverless compatibility check that reports `unsupported_runtime` because WDK's sodium-native addon cannot be bundled for Vercel's serverless runtime.
-- GitHub Actions run lint, build, tests, WDK smoke proof, and WDK policy proof with sanitized artifact upload.
+- GitHub Actions run lint, build, tests, generated fixture checks, WDK smoke proof, WDK policy proof, and sanitized artifact upload.
 
 Run:
 
@@ -165,7 +167,7 @@ What remains browser-only:
 
 Why this matters:
 
-The app now demonstrates real WDK package installability, native transaction-policy evaluation, exact PaymentIntent capability binding, fee quoting, and no-broadcast signing without risking secret handling in the deployed browser MVP. Production payment execution still needs durable server-side storage, secure key custody, token contract configuration, testnet funds, explicit broadcast controls, and explorer tracking.
+The app now demonstrates real WDK package installability, native transaction-policy evaluation, exact PaymentIntent capability binding, application-owned one-time consumption, provider-derived unsigned transaction fields, and no-broadcast signing without risking secret handling in the deployed browser MVP. Production payment execution still needs durable transactional storage, secure key custody, real token contract configuration, testnet funds, explicit broadcast controls, and explorer tracking.
 
 See:
 
@@ -336,7 +338,7 @@ Pre-built UI kits:
 
 - Browser payment execution is a visualization only.
 - No real token transaction is broadcast by default.
-- MockUSDT is a test-token label, not official USDt.
+- MockUSDT is a test-token label, not official USDt; the Sepolia placeholder address used by the proof has no token bytecode and is marked `missing-contract`.
 - The `/api/wdk/smoke` endpoint returns `unsupported_runtime` status (WDK native addons cannot bundle for Vercel serverless).
 - QVAC SDK inference is not implemented.
 - No authentication.
