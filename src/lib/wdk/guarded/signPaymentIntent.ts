@@ -29,6 +29,7 @@ export async function signPaymentIntent(
     intentId: prepared.intentId,
     signed: true,
     signedPayloadHash: keccak256(signedPayload),
+    unsignedTransactionHash: prepared.unsignedTransactionHash,
     broadcast: false,
   };
 }

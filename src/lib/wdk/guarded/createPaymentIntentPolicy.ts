@@ -5,18 +5,26 @@ import {
   hashPaymentIntent,
   isPaymentIntentExpired,
   normalizeEvmAddress,
+  systemClock,
+  type Clock,
   type PaymentIntent,
 } from "@/domain/treasury";
 
 import { preparePaymentIntent } from "./preparePaymentIntent";
-import { DEFAULT_WDK_POLICY_ID, type EvmTransaction } from "./types";
+import {
+  DEFAULT_WDK_POLICY_ID,
+  type EvmTransaction,
+} from "./types";
+import type { PaymentIntentConsumptionStore } from "./paymentIntentConsumptionStore";
 
 export interface CreatePaymentIntentPolicyInput {
   intent: PaymentIntent;
   walletId: string;
   accountIndex: number;
   policyId?: string;
-  now?: Date;
+  clock?: Clock;
+  consumptionStore?: PaymentIntentConsumptionStore;
+  expectedTransaction?: EvmTransaction;
 }
 
 const executableStatuses = new Set([
@@ -24,20 +32,23 @@ const executableStatuses = new Set([
   "policy-allowed",
   "quoted",
   "prepared",
-  "signed",
 ]);
 
-function bigintEquals(left: unknown, right: bigint): boolean {
+function bigintEquals(left: unknown, right: unknown): boolean {
   try {
+    if (left === undefined || right === undefined) {
+      return left === right;
+    }
+
     if (
-      typeof left !== "bigint" &&
-      typeof left !== "number" &&
-      typeof left !== "string"
+      !["bigint", "number", "string"].includes(typeof left) ||
+      !["bigint", "number", "string"].includes(typeof right)
     ) {
       return false;
     }
 
-    return BigInt(left) === right;
+    return BigInt(left as string | number | bigint) ===
+      BigInt(right as string | number | bigint);
   } catch {
     return false;
   }
@@ -62,26 +73,58 @@ function lifecycleAllowsExecution(intent: PaymentIntent, now: Date): boolean {
   return executableStatuses.has(intent.status) && !isPaymentIntentExpired(intent, now);
 }
 
+async function intentHasNotBeenConsumed(
+  intent: PaymentIntent,
+  consumptionStore: PaymentIntentConsumptionStore | undefined,
+): Promise<boolean> {
+  if (!consumptionStore) return true;
+
+  return !(await consumptionStore.isConsumed(intent.id, intent.nonce));
+}
+
 function transactionMatchesIntent(
   transaction: EvmTransaction | null,
   intent: PaymentIntent,
+  expectedTransaction?: EvmTransaction,
 ): boolean {
   if (!transaction) return false;
 
-  const prepared = preparePaymentIntent(intent).transaction;
+  const prepared = expectedTransaction ?? preparePaymentIntent(intent).transaction;
 
   return (
     addressEquals(transaction.to, intent.tokenAddress) &&
     bigintEquals(transaction.value, BigInt(0)) &&
     transaction.data === prepared.data &&
-    String(transaction.chainId) === String(intent.chainId)
+    bigintEquals(transaction.chainId, intent.chainId) &&
+    addressEquals(prepared.to, intent.tokenAddress) &&
+    bigintEquals(prepared.value, BigInt(0)) &&
+    transaction.data === prepared.data &&
+    exactTransactionFieldEquals(transaction, prepared, "chainId") &&
+    exactTransactionFieldEquals(transaction, prepared, "nonce") &&
+    exactTransactionFieldEquals(transaction, prepared, "gasLimit") &&
+    exactTransactionFieldEquals(transaction, prepared, "gasPrice") &&
+    exactTransactionFieldEquals(transaction, prepared, "maxFeePerGas") &&
+    exactTransactionFieldEquals(transaction, prepared, "maxPriorityFeePerGas") &&
+    exactTransactionFieldEquals(transaction, prepared, "type")
   );
+}
+
+function exactTransactionFieldEquals(
+  transaction: EvmTransaction,
+  expected: EvmTransaction,
+  field: keyof EvmTransaction,
+): boolean {
+  if (field === "to" || field === "data") {
+    return transaction[field] === expected[field];
+  }
+
+  return bigintEquals(transaction[field], expected[field]);
 }
 
 export function createPaymentIntentPolicy(
   input: CreatePaymentIntentPolicyInput,
 ): Policy {
-  const now = input.now ?? new Date();
+  const clock = input.clock ?? systemClock;
   const intentHash = hashPaymentIntent(input.intent);
 
   return {
@@ -92,24 +135,38 @@ export function createPaymentIntentPolicy(
     accounts: [input.accountIndex],
     rules: [
       {
+        name: "deny-consumed-payment-intent",
+        operation: "signTransaction",
+        action: "DENY",
+        reason: "PaymentIntent has already been consumed.",
+        conditions: [
+          async () =>
+            !(await intentHasNotBeenConsumed(input.intent, input.consumptionStore)),
+        ],
+      },
+      {
         name: "deny-unusable-intent-lifecycle",
         operation: "signTransaction",
         action: "DENY",
         reason: "PaymentIntent is not in an executable lifecycle state.",
-        conditions: [() => !lifecycleAllowsExecution(input.intent, now)],
+        conditions: [() => !lifecycleAllowsExecution(input.intent, clock.now())],
       },
       {
         name: "allow-exact-payment-intent-signature",
         operation: "signTransaction",
         action: "ALLOW",
-        override_broader_scope: true,
         reason: "Exact PaymentIntent transaction matched.",
         conditions: [
           (context) => accountMatchesIntent(context, input.intent),
           ({ params }) =>
-            transactionMatchesIntent(params as EvmTransaction | null, input.intent),
+            transactionMatchesIntent(
+              params as EvmTransaction | null,
+              input.intent,
+              input.expectedTransaction,
+            ),
           () => hashPaymentIntent(input.intent) === intentHash,
-          () => lifecycleAllowsExecution(input.intent, now),
+          () => lifecycleAllowsExecution(input.intent, clock.now()),
+          () => intentHasNotBeenConsumed(input.intent, input.consumptionStore),
         ],
       },
     ],

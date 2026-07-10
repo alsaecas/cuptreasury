@@ -14,7 +14,10 @@
     "wdk:smoke": "tsx scripts/wdk-smoke-test.ts",
     "wdk:policy-demo": "tsx scripts/wdk-policy-demo.ts",
     "wdk:policy-demo:json": "tsx scripts/wdk-policy-demo.ts --json",
-    "semifinal:verify": "npm run lint && npm run build && npm test && npm run test:coverage && npm run wdk:smoke && npm run wdk:policy-demo && npm run wdk:policy-demo:json"
+    "guarded-proof:generate": "tsx scripts/generate-guarded-proof.ts",
+    "guarded-proof:check": "tsx scripts/check-guarded-proof.ts",
+    "proof:manifest": "tsx scripts/generate-proof-manifest.ts",
+    "semifinal:verify": "npm run lint && npm run build && npm test && npm run test:coverage && npm run wdk:smoke && npm run wdk:policy-demo && npm run wdk:policy-demo:json && npm run guarded-proof:check"
   },
   "dependencies": {
     "@tetherto/wdk": "^1.0.0-beta.13",

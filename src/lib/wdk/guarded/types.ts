@@ -1,6 +1,8 @@
 import type { SimulationResult } from "@tetherto/wdk";
 
-import type { ExecutionReceipt, PaymentIntent } from "@/domain/treasury";
+import type { Clock, ExecutionReceipt, PaymentIntent } from "@/domain/treasury";
+
+import type { PaymentIntentConsumptionStore } from "./paymentIntentConsumptionStore";
 
 export const WDK_EVM_WALLET_ID = "ethereum";
 export const DEFAULT_SEPOLIA_RPC_URL = "https://sepolia.drpc.org";
@@ -43,8 +45,37 @@ export interface TreasuryWdkContext {
   provider?: string;
   walletAddress: string;
   account: WdkEvmAccount;
-  registerPaymentIntentPolicy(intent: PaymentIntent): Promise<WdkEvmAccount>;
+  registerPaymentIntentPolicy(
+    intent: PaymentIntent,
+    options?: RegisterPaymentIntentPolicyOptions,
+  ): Promise<WdkEvmAccount>;
+  registerPolicy(policy: import("@tetherto/wdk").Policy): Promise<WdkEvmAccount>;
   dispose(): void;
+}
+
+export interface RegisterPaymentIntentPolicyOptions {
+  policyId?: string;
+  clock?: Clock;
+  consumptionStore?: PaymentIntentConsumptionStore;
+  expectedTransaction?: EvmTransaction;
+}
+
+export type TokenContractStatus = "bytecode-present" | "missing-contract";
+
+export interface ProviderDerivedTransactionFields {
+  nonce: number;
+  gasLimit: string;
+  chainId: number;
+  gasPrice?: string;
+  maxFeePerGas?: string;
+  maxPriorityFeePerGas?: string;
+}
+
+export interface TokenContractCheck {
+  tokenAddress: string;
+  status: TokenContractStatus;
+  bytecodePresent: boolean;
+  codeHash?: string;
 }
 
 export interface PreparedPaymentIntentTransaction {
@@ -53,6 +84,9 @@ export interface PreparedPaymentIntentTransaction {
   transaction: EvmTransaction;
   calldataHash: string;
   intentHash: string;
+  unsignedTransactionHash: string;
+  providerDerived?: ProviderDerivedTransactionFields;
+  tokenContract: TokenContractCheck;
   broadcast: false;
 }
 
@@ -65,6 +99,7 @@ export interface SignPaymentIntentResult {
   intentId: string;
   signed: true;
   signedPayloadHash: string;
+  unsignedTransactionHash: string;
   broadcast: false;
 }
 
@@ -72,8 +107,12 @@ export interface ExecutePaymentIntentInput {
   account: WdkEvmAccount;
   intent: PaymentIntent;
   network: string;
+  provider?: string;
+  clock?: Clock;
+  consumptionStore?: PaymentIntentConsumptionStore;
   sign?: boolean;
   timestamp?: string;
+  prepared?: PreparedPaymentIntentTransaction;
 }
 
 export interface ExecutePaymentIntentResult {

@@ -11,12 +11,7 @@ export async function quotePaymentIntent(
   account: WdkEvmAccount,
   prepared: PreparedPaymentIntentTransaction,
 ): Promise<QuotePaymentIntentResult> {
-  const quote = await account.quoteSendTransaction({
-    to: prepared.transaction.to,
-    value: prepared.transaction.value,
-    data: prepared.transaction.data,
-    chainId: prepared.transaction.chainId,
-  });
+  const quote = await account.quoteSendTransaction(prepared.transaction);
 
   return {
     intentId: prepared.intentId,

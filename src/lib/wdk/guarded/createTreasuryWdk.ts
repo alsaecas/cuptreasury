@@ -10,8 +10,10 @@ import {
   WDK_EVM_WALLET_ID,
   type TreasuryWdkConfig,
   type TreasuryWdkContext,
+  type RegisterPaymentIntentPolicyOptions,
   type WdkEvmAccount,
 } from "./types";
+import type { Policy } from "@tetherto/wdk";
 
 export async function createTreasuryWdk(
   config: TreasuryWdkConfig = {},
@@ -39,15 +41,32 @@ export async function createTreasuryWdk(
     provider,
     walletAddress,
     account,
-    async registerPaymentIntentPolicy(intent: PaymentIntent) {
+    async registerPaymentIntentPolicy(
+      intent: PaymentIntent,
+      options: RegisterPaymentIntentPolicyOptions = {},
+    ) {
       wdk.registerPolicy(
         createPaymentIntentPolicy({
           intent,
           walletId,
           accountIndex,
+          policyId: options.policyId,
+          clock: options.clock,
+          consumptionStore: options.consumptionStore,
+          expectedTransaction: options.expectedTransaction,
         }),
         { conditionTimeoutMs: 5_000 },
       );
+      account = (await wdk.getAccount(
+        walletId,
+        accountIndex,
+      )) as unknown as WdkEvmAccount;
+      context.account = account;
+
+      return account;
+    },
+    async registerPolicy(policy: Policy) {
+      wdk.registerPolicy(policy, { conditionTimeoutMs: 5_000 });
       account = (await wdk.getAccount(
         walletId,
         accountIndex,
