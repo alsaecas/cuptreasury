@@ -77,7 +77,7 @@ export async function preparePaymentIntentWithProvider(
   const gasLimit = await provider.estimateGas({
     from: options.fromAddress,
     to: intent.tokenAddress,
-      value: BigInt(0),
+    value: BigInt(0),
     data,
   });
   const feeData = await provider.getFeeData();

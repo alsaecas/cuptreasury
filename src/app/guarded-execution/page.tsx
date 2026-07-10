@@ -82,20 +82,20 @@ export default function GuardedExecutionPage() {
             </h2>
           </div>
           <div className="mt-4 grid gap-4">
-              <ProofRow
-                icon={<ReceiptText size={18} aria-hidden="true" />}
-                label="Payment request"
-                value={`${guardedExecutionProof.request.displayAmount} ${guardedExecutionProof.request.tokenSymbol} · atomic ${guardedExecutionProof.request.amountAtomic}`}
-              />
-              <ProofRow
-                icon={<Fingerprint size={18} aria-hidden="true" />}
-                label="Intent hash"
-                value={guardedExecutionProof.capability.hash}
-                mono
-              />
-              <ProofRow
-                icon={<KeyRound size={18} aria-hidden="true" />}
-                label="Ephemeral WDK account"
+            <ProofRow
+              icon={<ReceiptText size={18} aria-hidden="true" />}
+              label="Payment request"
+              value={`${guardedExecutionProof.request.displayAmount} ${guardedExecutionProof.request.tokenSymbol} · atomic ${guardedExecutionProof.request.amountAtomic}`}
+            />
+            <ProofRow
+              icon={<Fingerprint size={18} aria-hidden="true" />}
+              label="Intent hash"
+              value={guardedExecutionProof.capability.hash}
+              mono
+            />
+            <ProofRow
+              icon={<KeyRound size={18} aria-hidden="true" />}
+              label="Ephemeral WDK account"
               value={guardedExecutionProof.safeEphemeralAddress}
               mono
             />
@@ -237,7 +237,9 @@ export default function GuardedExecutionPage() {
             <ProofLink href="https://github.com/alsaecas/cuptreasury/actions/workflows/wdk-smoke.yml">
               WDK workflow
             </ProofLink>
-            <ProofLink href="/docs/SEMIFINAL_REVIEW.md">
+            <ProofLink
+              href={`https://github.com/alsaecas/cuptreasury/blob/${guardedExecutionProof.sourceCommit}/docs/SEMIFINAL_REVIEW.md`}
+            >
               Judge guide
             </ProofLink>
           </div>

@@ -4,7 +4,7 @@
 export const guardedExecutionProof = {
   "ok": true,
   "schemaVersion": 1,
-  "generatedAt": "2026-07-10T07:42:07.268Z",
+  "generatedAt": "2026-07-10T07:55:16.048Z",
   "sdk": "@tetherto/wdk",
   "walletModule": "@tetherto/wdk-wallet-evm",
   "packageVersions": {
@@ -14,7 +14,7 @@ export const guardedExecutionProof = {
   },
   "network": "Sepolia",
   "chainId": 11155111,
-  "sourceCommit": "68d09fd335918e2f75dbd1f0cb3381b2fbce6d82",
+  "sourceCommit": "2ff29786fd6b0c90ac32bf2e92ab46b8902dee78",
   "workflow": {
     "name": null,
     "runId": null,
@@ -47,11 +47,11 @@ export const guardedExecutionProof = {
     "version": 1,
     "intentId": "intent-van-rental",
     "requestId": "request-van-rental",
-    "hash": "0xc7fe5377ee5f8e6d9d9b290654b1fa3b4230709934e71fbcd2807d8246dc04eb",
+    "hash": "0xcc740f28733b0afc3f9e093afd471be607d72c08248018690660096b59747a39",
     "status": "authorized",
     "nonce": "semi-demo-replay",
-    "expiresAt": "2026-07-10T08:42:07.268Z",
-    "treasuryAccount": "0x8a904Ef1CeAC3878053F8E5E1e23Da078C61DFd4",
+    "expiresAt": "2026-07-10T08:55:16.048Z",
+    "treasuryAccount": "0x9091f6e7e6041F80774E50Ea8E70Ffa9f2E97247",
     "tokenAddress": "0x0000000000000000000000000000000000002000",
     "recipient": "0x0000000000000000000000000000000000003000",
     "amountAtomic": "120000000",
@@ -71,7 +71,7 @@ export const guardedExecutionProof = {
       }
     ]
   },
-  "safeEphemeralAddress": "0x8a904Ef1CeAC3878053F8E5E1e23Da078C61DFd4",
+  "safeEphemeralAddress": "0x9091f6e7e6041F80774E50Ea8E70Ffa9f2E97247",
   "scenarios": [
     {
       "id": "insufficient-approvals",
@@ -81,7 +81,7 @@ export const guardedExecutionProof = {
       "policyId": "cup-treasury-insufficient-approvals",
       "matchedRule": "deny-unusable-intent-lifecycle",
       "reason": "WDK native transaction policy denied the transaction: PaymentIntent is not in an executable lifecycle state.",
-      "evaluatedAt": "2026-07-10T07:42:07.268Z"
+      "evaluatedAt": "2026-07-10T07:55:16.048Z"
     },
     {
       "id": "exact-authorized-intent",
@@ -91,7 +91,7 @@ export const guardedExecutionProof = {
       "policyId": "cup-treasury-exact-authorized-intent",
       "matchedRule": "allow-exact-payment-intent-signature",
       "reason": "WDK native transaction policy allowed the exact PaymentIntent transaction.",
-      "evaluatedAt": "2026-07-10T07:42:07.268Z"
+      "evaluatedAt": "2026-07-10T07:55:16.048Z"
     },
     {
       "id": "modified-amount",
@@ -100,7 +100,7 @@ export const guardedExecutionProof = {
       "policyDecision": "DENY",
       "policyId": "wdk-default-deny",
       "reason": "WDK native transaction policy denied the transaction: governed-but-unmatched.",
-      "evaluatedAt": "2026-07-10T07:42:07.268Z"
+      "evaluatedAt": "2026-07-10T07:55:16.048Z"
     },
     {
       "id": "modified-recipient",
@@ -109,7 +109,7 @@ export const guardedExecutionProof = {
       "policyDecision": "DENY",
       "policyId": "wdk-default-deny",
       "reason": "WDK native transaction policy denied the transaction: governed-but-unmatched.",
-      "evaluatedAt": "2026-07-10T07:42:07.268Z"
+      "evaluatedAt": "2026-07-10T07:55:16.048Z"
     },
     {
       "id": "modified-token",
@@ -118,7 +118,7 @@ export const guardedExecutionProof = {
       "policyDecision": "DENY",
       "policyId": "wdk-default-deny",
       "reason": "WDK native transaction policy denied the transaction: governed-but-unmatched.",
-      "evaluatedAt": "2026-07-10T07:42:07.268Z"
+      "evaluatedAt": "2026-07-10T07:55:16.048Z"
     },
     {
       "id": "wrong-chain",
@@ -127,7 +127,7 @@ export const guardedExecutionProof = {
       "policyDecision": "DENY",
       "policyId": "wdk-default-deny",
       "reason": "WDK native transaction policy denied the transaction: governed-but-unmatched.",
-      "evaluatedAt": "2026-07-10T07:42:07.268Z"
+      "evaluatedAt": "2026-07-10T07:55:16.048Z"
     },
     {
       "id": "wrong-treasury-account",
@@ -136,7 +136,7 @@ export const guardedExecutionProof = {
       "policyDecision": "DENY",
       "policyId": "wdk-default-deny",
       "reason": "WDK native transaction policy denied the transaction: governed-but-unmatched.",
-      "evaluatedAt": "2026-07-10T07:42:07.268Z"
+      "evaluatedAt": "2026-07-10T07:55:16.048Z"
     },
     {
       "id": "expired-intent",
@@ -146,7 +146,7 @@ export const guardedExecutionProof = {
       "policyId": "cup-treasury-expired-intent",
       "matchedRule": "deny-unusable-intent-lifecycle",
       "reason": "WDK native transaction policy denied the transaction: PaymentIntent is not in an executable lifecycle state.",
-      "evaluatedAt": "2026-07-10T07:42:07.268Z"
+      "evaluatedAt": "2026-07-10T07:55:16.048Z"
     },
     {
       "id": "first-valid-signing-attempt",
@@ -156,7 +156,7 @@ export const guardedExecutionProof = {
       "policyId": "cup-treasury-one-time-replay",
       "matchedRule": "allow-exact-payment-intent-signature",
       "reason": "WDK allowed and signed the exact provider-derived no-broadcast transaction.",
-      "evaluatedAt": "2026-07-10T07:42:08.268Z"
+      "evaluatedAt": "2026-07-10T07:55:17.048Z"
     },
     {
       "id": "second-use-denied",
@@ -166,24 +166,24 @@ export const guardedExecutionProof = {
       "policyId": "cup-treasury-one-time-replay",
       "matchedRule": "deny-consumed-payment-intent",
       "reason": "WDK native transaction policy denied the transaction: PaymentIntent has already been consumed.",
-      "evaluatedAt": "2026-07-10T07:42:09.268Z"
+      "evaluatedAt": "2026-07-10T07:55:18.048Z"
     }
   ],
   "feeQuote": {
     "status": "unsupported",
-    "reason": "insufficient funds (transaction={ \"chainId\": \"0xaa36a7\", \"data\": \"0xa9059cbb00000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000007270e00\", \"from\": \"0x8a904ef1ceac3878053f8e5e1e23da078c61dfd4\", \"gas\": \"0x5646\", \"maxFeePerGas\": \"0xd8c5d4a8\", \"maxPriorityFeePerGas\": \"0xf4240\", \"nonce\": \"0x0\", \"to\": \"0x0000000000000000000000000000000000002000\", \"type\": \"0x2\", \"value\": \"0x0\" }, info={ \"error\": { \"code\": -32000, \"message\": \"insufficient funds for transfer\" }, \"payload\": { \"id\": 1, \"jsonrpc\": \"2.0\", \"method\": \"eth_estimateGas\", \"params\": [ { \"chainId\": \"0xaa36a7\", \"data\": \"0xa9059cbb00000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000007270e00\", \"from\": \"0x8a904ef1ceac3878053f8e5e1e23da078c61dfd4\", \"gas\": \"0x5646\", \"maxFeePerGas\": \"0xd8c5d4a8\", \"maxPriorityFeePerGas\": \"0xf4240\", \"nonce\": \"0x0\", \"to\": \"0x0000000000000000000000000000000000002000\", \"type\": \"0x2\", \"value\": \"0x0\" } ] } }, code=INSUFFICIENT_FUNDS, version=6.17.0)"
+    "reason": "missing revert data (action=\"estimateGas\", data=null, reason=null, transaction={ \"data\": \"0xa9059cbb00000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000007270e00\", \"from\": \"0x9091f6e7e6041F80774E50Ea8E70Ffa9f2E97247\", \"to\": \"0x0000000000000000000000000000000000002000\" }, invocation=null, revert=null, code=CALL_EXCEPTION, version=6.17.0)"
   },
   "prepared": {
     "intentId": "intent-van-rental",
     "calldataHash": "0xb109ce3afb69c3c2f053e450e89dfa383f6c85d32ee66d9368c0426e4a9905c3",
-    "intentHash": "0xc7fe5377ee5f8e6d9d9b290654b1fa3b4230709934e71fbcd2807d8246dc04eb",
-    "unsignedTransactionHash": "0xc804698955bea13c85e252f4b20f57aab21048b33405a8f3a3768b29c0c32708",
+    "intentHash": "0xcc740f28733b0afc3f9e093afd471be607d72c08248018690660096b59747a39",
+    "unsignedTransactionHash": "0xee752c5c418bf8d4cf8d3eee09ee594d48891ad164e6029eb962f2b3943e736d",
     "providerDerived": {
       "nonce": 0,
       "gasLimit": "22086",
       "chainId": 11155111,
-      "gasPrice": "1818921844",
-      "maxFeePerGas": "3636843688",
+      "gasPrice": "2216164967",
+      "maxFeePerGas": "4431329934",
       "maxPriorityFeePerGas": "1000000"
     },
     "tokenContract": {
@@ -196,17 +196,17 @@ export const guardedExecutionProof = {
   "signed": {
     "intentId": "intent-van-rental",
     "signed": true,
-    "signedPayloadHash": "0xb52614b9d9b16b05ff69695bce108b97c655b1fa883f26e9c8852afef64d9ac3",
-    "unsignedTransactionHash": "0xc804698955bea13c85e252f4b20f57aab21048b33405a8f3a3768b29c0c32708",
+    "signedPayloadHash": "0x824179f53c9740879e7f147e58249cc236036421280327c26d99fd1e470651aa",
+    "unsignedTransactionHash": "0xee752c5c418bf8d4cf8d3eee09ee594d48891ad164e6029eb962f2b3943e736d",
     "broadcast": false
   },
   "executionReceipt": {
-    "receiptId": "proof-receipt-intent-van-rental-c8046989",
+    "receiptId": "proof-receipt-intent-van-rental-ee752c5c",
     "intentId": "intent-van-rental",
     "requestId": "request-van-rental",
     "network": "Sepolia",
     "chainId": 11155111,
-    "walletAddress": "0x8a904Ef1CeAC3878053F8E5E1e23Da078C61DFd4",
+    "walletAddress": "0x9091f6e7e6041F80774E50Ea8E70Ffa9f2E97247",
     "recipient": "0x0000000000000000000000000000000000003000",
     "tokenAddress": "0x0000000000000000000000000000000000002000",
     "tokenSymbol": "MockUSDT",
@@ -216,9 +216,9 @@ export const guardedExecutionProof = {
     "consumed": true,
     "broadcast": false,
     "calldataHash": "0xb109ce3afb69c3c2f053e450e89dfa383f6c85d32ee66d9368c0426e4a9905c3",
-    "unsignedTransactionHash": "0xc804698955bea13c85e252f4b20f57aab21048b33405a8f3a3768b29c0c32708",
+    "unsignedTransactionHash": "0xee752c5c418bf8d4cf8d3eee09ee594d48891ad164e6029eb962f2b3943e736d",
     "tokenContractStatus": "missing-contract",
-    "timestamp": "2026-07-10T07:42:08.768Z"
+    "timestamp": "2026-07-10T07:55:17.548Z"
   },
   "auditProjection": {
     "intentId": "intent-van-rental",
@@ -226,7 +226,7 @@ export const guardedExecutionProof = {
     "prepared": true,
     "signed": true,
     "broadcast": false,
-    "updatedAt": "2026-07-10T07:42:08.768Z",
+    "updatedAt": "2026-07-10T07:55:17.548Z",
     "requestId": "request-van-rental",
     "policyDecision": "ALLOW"
   },
@@ -245,6 +245,6 @@ export const guardedExecutionProof = {
     "No transaction was broadcast.",
     "No seed phrase, private key, mnemonic, or funded wallet is persisted."
   ],
-  "proofContentHash": "f1311358d45b0db23451d61113ccb43bc5279299b2c3fd269f230dd345dc9d02",
-  "proofArtifactSha256": "cf5c94bf9001d422253bb7ea8333cb81725390a23fd22b4b7395ce54c27c2d83"
+  "proofContentHash": "1ffeafc3cdd4d173543af2f66330332e545c2b7e36a1d52d72ccf3f2f77754b2",
+  "proofArtifactSha256": "532dea2737cf3112220f201f55dbd607592c5ea8d367bfd27b2e65c506b202da"
 } as const;
