@@ -14,6 +14,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/Badge";
 import { guardedExecutionProof } from "@/data/generated/guardedExecutionProof.generated";
+import { wdkContractProof } from "@/data/generated/wdkContractProof.generated";
 
 const flowSteps = [
   "PaymentRequest",
@@ -22,6 +23,12 @@ const flowSteps = [
   "WDK policy evaluation",
   "Quote and prepare",
   "No-broadcast receipt",
+];
+
+const contractLayers = [
+  ["Domain governance", "Trusted roster, atomic amount, approval threshold, canonical PaymentIntent."],
+  ["WDK signer enforcement", "Exact contract call ALLOW/DENY, no modified calldata, one-time application consumption."],
+  ["TeamTreasury on-chain enforcement", "Captain/Treasurer approvals, expiry, exact MockUSDT transfer, and contract replay prevention."],
 ];
 
 export default function GuardedExecutionPage() {
@@ -243,6 +250,35 @@ export default function GuardedExecutionPage() {
               Judge guide
             </ProofLink>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-8 lg:px-10">
+        <div className="rounded-lg border border-lime-300/25 bg-lime-300/[0.05] p-5 sm:p-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="green">WDK signed</Badge>
+            <Badge tone="blue">Local chain only</Badge>
+            <Badge tone="amber">MockUSDT test token</Badge>
+            <Badge tone="green">Replay protected</Badge>
+          </div>
+          <h2 className="mt-4 text-2xl font-black text-white">Deterministic TeamTreasury execution proof</h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-zinc-300">
+            PaymentRequest → PaymentIntent → WDK policy → WDK signature → TeamTreasury → MockUSDT transfer → execution receipt.
+            MockUSDT is a local test token and is not official USDt. No real funds or public-chain broadcast are used.
+          </p>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            {contractLayers.map(([title, copy]) => <div key={title} className="rounded-md border border-white/10 bg-black/20 p-4"><p className="font-semibold text-lime-100">{title}</p><p className="mt-2 text-sm leading-6 text-zinc-400">{copy}</p></div>)}
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ProofRow icon={<Fingerprint size={18} aria-hidden="true" />} label="PaymentIntent hash" value={wdkContractProof.teamTreasury.paymentIntentHash} mono />
+            <ProofRow icon={<ReceiptText size={18} aria-hidden="true" />} label="TeamTreasury / request" value={`${wdkContractProof.teamTreasury.contractAddress} · #${wdkContractProof.teamTreasury.requestId}`} mono />
+            <ProofRow icon={<KeyRound size={18} aria-hidden="true" />} label="WDK executor" value={wdkContractProof.wdk.executorAddress} mono />
+            <ProofRow icon={<CheckCircle2 size={18} aria-hidden="true" />} label="Atomic transfer" value={`${wdkContractProof.execution.transferredAmount} MockUSDT atomic units`} mono />
+            <ProofRow icon={<CheckCircle2 size={18} aria-hidden="true" />} label="Recipient balance" value={`${wdkContractProof.execution.recipientBalanceBefore} → ${wdkContractProof.execution.recipientBalanceAfter}`} mono />
+            <ProofRow icon={<ShieldCheck size={18} aria-hidden="true" />} label="Broadcast boundary" value="Local true · public false · mainnet false" />
+          </div>
+          <div className="mt-5 overflow-hidden rounded-md border border-white/10"><table className="w-full text-left text-sm"><thead className="bg-white/[0.04] text-xs uppercase text-zinc-500"><tr><th className="px-4 py-3">Tamper / replay check</th><th className="px-4 py-3">Result</th></tr></thead><tbody>{wdkContractProof.tamperScenarios.map((scenario) => <tr key={scenario.id} className="border-t border-white/10"><td className="px-4 py-3 font-semibold text-zinc-200">{scenario.id}</td><td className="px-4 py-3 font-mono text-red-200">{scenario.result}</td></tr>)}</tbody></table></div>
+          <p className="mt-4 text-xs text-zinc-500">Artifact SHA-256: {wdkContractProof.proofArtifactSha256} · source commit: {wdkContractProof.sourceCommit}</p>
         </div>
       </section>
 

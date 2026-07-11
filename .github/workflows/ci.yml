@@ -36,8 +36,29 @@ jobs:
       - name: Test
         run: npm run test:coverage
 
+      - name: Compile local contracts
+        run: npm run contract:compile
+
+      - name: Test local contracts
+        run: npm run contract:test
+
       - name: Generate WDK policy proof
         run: npm run wdk:policy-demo:json
 
       - name: Check generated browser proof fixture
         run: npm run guarded-proof:check
+
+      - name: Generate local WDK contract proof
+        run: npm run wdk:contract-demo:json
+
+      - name: Check generated contract proof fixture
+        run: npm run contract-proof:check
+
+      - name: Upload sanitized proofs
+        uses: actions/upload-artifact@v4
+        with:
+          name: semifinal-proofs
+          path: |
+            artifacts/wdk-policy-proof.json
+            artifacts/wdk-contract-proof.json
+          if-no-files-found: error
