@@ -211,3 +211,6 @@ Judge flow:
 6. Broadcast only in explicit testnet mode.
 7. Return real transaction hashes and explorer URLs only for explicit future broadcast flows; no-broadcast demo flows return receipt identifiers.
 8. Add automated tests around policy approval and transaction preparation.
+# Local contract integration
+
+`scripts/wdk-contract-demo.ts` creates disposable WDK contexts, funds their derived accounts only with local development currency, signs Captain/Treasurer approvals plus final execution via WDK, and disposes contexts on shutdown. It never stores the generated wallet material.

@@ -2,6 +2,8 @@
 
 CupTreasury is a self-custodial football team treasury for squads, fan groups, and tournament teams. It helps a team collect contributions, approve match-day expenses, turn approvals into exact WDK-guarded PaymentIntent capabilities, and prepare safe no-broadcast receipts.
 
+The semifinal proof is WDK-native guarded execution: WDK independently binds and signs the exact approved transaction, while a local-only TeamTreasury contract independently enforces Captain/Treasurer approval rules. The deterministic local proof transfers exactly `120000000` atomic MockUSDT (120 six-decimal units) to the recipient. MockUSDT is a local test token and is not official USDt.
+
 Live demo:
 https://cuptreasury.vercel.app/
 
@@ -147,6 +149,10 @@ Run:
 ```bash
 npm run wdk:smoke
 npm run wdk:policy-demo
+npm run contract:test
+npm run wdk:contract-demo
+npm run wdk:contract-demo:json
+npm run contract-proof:check
 npm run semifinal:verify
 ```
 
