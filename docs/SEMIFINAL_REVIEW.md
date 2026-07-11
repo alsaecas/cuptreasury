@@ -1,4 +1,30 @@
-# Semifinal Review Guide
+# Final Semifinal Review Guide
+
+## Final local-proof implementation
+
+Pinned implementation SHA: `4206d8de93d558d336c207ef734bed0a7f38219c`
+
+Base URL: `https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c`
+
+| Area | What it proves | Why it matters | Trade-off | Pinned link |
+| --- | --- | --- | --- | --- |
+| MockUSDT | Six-decimal, role-restricted, local test token. | The 120-unit result uses atomic ERC-20 accounting. | It is explicitly not official USDt. | [MockUSDT](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/contracts/src/MockUSDT.sol#L7-L26) |
+| Request model | Token, recipient, atomic amount, PaymentIntent hash, expiry, and threshold are stored together. | Links the domain capability to on-chain authorization. | The local proof uses a single request ID. | [TeamTreasury model](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/contracts/src/TeamTreasury.sol#L17-L31) |
+| Roles and approvals | Captain/Treasurer-only creation and approval; duplicate approval rejection. | UI approval state cannot be used to bypass contract governance. | Two officers are the supported local model. | [role/approval logic](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/contracts/src/TeamTreasury.sol#L67-L112) |
+| Execute and replay | Threshold and expiry checks set executed before SafeERC20 transfer; second call reverts. | Contract independently prevents replay. | No arbitrary-call or emergency withdrawal path exists. | [execution](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/contracts/src/TeamTreasury.sol#L115-L138) |
+| WDK exact execution policy | Account, contract, zero value, calldata, chain, nonce, gas, fees, lifecycle, and consumption are matched. | WDK cannot sign a changed final call. | Application maintains one-time consumption state. | [policy](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/src/lib/wdk/contracts/createTeamTreasuryExecutionPolicy.ts#L18-L48) |
+| Provider-derived call | Local provider supplies nonce, estimate, and fee fields for `executeRequest`. | The signed transaction is the evaluated transaction. | Local Hardhat fees are development-only. | [preparation](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/src/lib/wdk/contracts/prepareTeamTreasuryTransaction.ts#L11-L28) |
+| WDK raw signing and broadcast | Script funds only local accounts, signs role calls and execution with WDK, then broadcasts the raw signed transaction locally. | Demonstrates real WDK signing rather than an ethers Wallet substitution. | Ephemeral chain only; WDK contexts are disposed. | [local proof](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/scripts/wdk-contract-demo.ts#L47-L117) |
+| Balance and replay verification | Script checks `120000000` recipient delta, WDK replay DENY, and direct contract replay revert. | Both enforcement layers are exercised. | No public explorer transaction exists by design. | [proof result](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/scripts/wdk-contract-demo.ts#L93-L108) |
+| Contract tests | Deterministic tests cover roles, invalid data, approvals, transfer, cancellation, expiry, and replay. | Contract behavior is regression-checked. | The harness uses an ephemeral local node. | [contract tests](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/scripts/contract-test.ts#L24-L96) |
+| Sanitized artifact | Generated JSON records only public ephemeral addresses, decisions, balances, and hashes. | Browser evidence has no seed/key material. | Addresses and tx hashes legitimately vary each run. | [artifact](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/artifacts/wdk-contract-proof.json) |
+| Browser proof | Guarded Execution renders enforcement layers, transfer result, badges, and replay outcomes. | Judges can inspect the local proof without native WDK browser claims. | It is visualization, not a browser wallet. | [browser section](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/src/app/guarded-execution/page.tsx#L256-L283) |
+| CI | CI compiles/tests contracts, reproduces proof, checks generated fixture, uploads sanitized artifacts. | Reproduction does not rely on public RPC. | Existing smoke workflow remains separate. | [CI](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/.github/workflows/ci.yml#L21-L66) |
+| Security and trade-offs | WDK and contract duties plus local-only disclosure. | Claims remain bounded and auditable. | Production needs durable storage and real custody design. | [security model](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/docs/SECURITY_MODEL.md#L3-L9), [contract architecture](https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c/docs/CONTRACT_ARCHITECTURE.md) |
+
+Run `npm ci && npm run semifinal:verify` to reproduce all deterministic gates.
+
+# Prior guarded-execution review guide
 
 Pinned implementation SHA: `2ff29786fd6b0c90ac32bf2e92ab46b8902dee78`
 
