@@ -3,13 +3,13 @@ import { once } from "node:events";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { Contract, ContractFactory, JsonRpcProvider, ZeroAddress, keccak256, toUtf8Bytes, type ContractTransactionResponse } from "ethers";
+import { Contract, ContractFactory, JsonRpcProvider, ZeroAddress, keccak256, toUtf8Bytes, type ContractTransactionResponse, type InterfaceAbi } from "ethers";
 
 const PORT = 18545;
 const RPC_URL = `http://127.0.0.1:${PORT}`;
 const AMOUNT = 120_000_000n;
 const FUNDING = 500_000_000n;
-type Artifact = { abi: unknown[]; bytecode: string };
+type Artifact = { abi: InterfaceAbi; bytecode: string };
 
 async function main() {
   const node = startNode();
@@ -32,7 +32,7 @@ async function runContractTests() {
   const recipient = await provider.getSigner(4);
   const [captainAddress, treasurerAddress, playerAddress, recipientAddress, deployerAddress] = await Promise.all([captain.getAddress(), treasurer.getAddress(), player.getAddress(), recipient.getAddress(), deployer.getAddress()]);
   const Mock = new ContractFactory((await artifact("MockUSDT")).abi, (await artifact("MockUSDT")).bytecode, deployer);
-  const mock = await Mock.deploy(deployerAddress);
+  const mock = (await Mock.deploy(deployerAddress)) as unknown as Contract;
   await mock.waitForDeployment();
   assertEqual(await mock.name(), "Mock USD Tether", "MockUSDT name");
   assertEqual(await mock.symbol(), "MockUSDT", "MockUSDT symbol");
@@ -41,7 +41,7 @@ async function runContractTests() {
 
   const TreasuryArtifact = await artifact("TeamTreasury");
   const Treasury = new ContractFactory(TreasuryArtifact.abi, TreasuryArtifact.bytecode, deployer);
-  const treasury = await Treasury.deploy(captainAddress, treasurerAddress);
+  const treasury = (await Treasury.deploy(captainAddress, treasurerAddress)) as unknown as Contract;
   await treasury.waitForDeployment();
   const treasuryAddress = await treasury.getAddress();
   assertEqual(await treasury.hasRole(await treasury.CAPTAIN_ROLE(), captainAddress), true, "captain role");

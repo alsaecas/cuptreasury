@@ -15,7 +15,10 @@
 .playwright-cli/
 
 # generated proof artifacts
-/artifacts
+/artifacts/*
+!/artifacts/wdk-contract-proof.json
+/contracts/artifacts
+/contracts/cache
 
 # next.js
 /.next/

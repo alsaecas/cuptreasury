@@ -1,0 +1,67 @@
+{
+  "ok": true,
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-11T15:22:01.970Z",
+  "sourceCommit": "b041e5afecd69f653e04b8fcb5c7d551aa4f33e7",
+  "network": {
+    "name": "hardhat",
+    "chainId": 31337,
+    "ephemeral": true,
+    "realFundsUsed": false
+  },
+  "token": {
+    "symbol": "MockUSDT",
+    "decimals": 6,
+    "contractAddress": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "officialUsdt": false,
+    "localTestOnly": true
+  },
+  "teamTreasury": {
+    "contractAddress": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "requestId": "0",
+    "paymentIntentHash": "0x0fa717819148134225e418aee5601db0e042d0940c3314e1574e0ef797f75f9d",
+    "requiredApprovals": 2,
+    "approvalCount": 2
+  },
+  "wdk": {
+    "coreVersion": "@tetherto/wdk",
+    "evmModuleVersion": "@tetherto/wdk-wallet-evm",
+    "executorAddress": "0x173CE1220c7ABf4821f4A254de348A80E1c46f58",
+    "policyDecision": "ALLOW",
+    "signedByWdk": true,
+    "broadcastLocally": true,
+    "approvalsSignedByWdk": true
+  },
+  "tamperScenarios": [
+    {
+      "id": "changed-request-id",
+      "result": "DENY"
+    },
+    {
+      "id": "changed-calldata",
+      "result": "DENY"
+    },
+    {
+      "id": "second-app-use",
+      "result": "DENY"
+    }
+  ],
+  "execution": {
+    "transactionHash": "0xcc03edd5dc43ccd474638021f01568aab11f9255e6235c1fbbf22bc309e1374c",
+    "blockNumber": "9",
+    "recipientBalanceBefore": "0",
+    "recipientBalanceAfter": "120000000",
+    "transferredAmount": "120000000",
+    "requestExecuted": true
+  },
+  "defenseInDepth": {
+    "wdkReplayDenied": true,
+    "contractReplayReverted": true
+  },
+  "broadcast": {
+    "localOnly": true,
+    "publicTestnet": false,
+    "mainnet": false
+  },
+  "secretsPersisted": false
+}

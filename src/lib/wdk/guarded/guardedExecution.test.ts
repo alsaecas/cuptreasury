@@ -104,7 +104,7 @@ describe("WDK guarded PaymentIntent execution", () => {
       context = await createTreasuryWdk();
     }
 
-    return context.registerPaymentIntentPolicy(intent);
+    return context.registerPaymentIntentPolicy(intent, { clock: fixedClock(NOW) });
   }
 
   it("allows an exact authorized intent through WDK native policy simulation", async () => {
@@ -365,7 +365,7 @@ describe("WDK guarded PaymentIntent execution", () => {
   it("does not let an account-level exact ALLOW bypass a broader DENY", async () => {
     context = await createTreasuryWdk();
     const intent = createIntent(context.walletAddress);
-    await context.registerPaymentIntentPolicy(intent);
+    await context.registerPaymentIntentPolicy(intent, { clock: fixedClock(NOW) });
     const account = await context.registerPolicy({
       id: "project-emergency-freeze",
       name: "Project emergency freeze",
@@ -397,6 +397,7 @@ describe("WDK guarded PaymentIntent execution", () => {
     });
     const account = await context.registerPaymentIntentPolicy(intent, {
       expectedTransaction: prepared.transaction,
+      clock: fixedClock(NOW),
     });
     const receipt = await evaluatePaymentIntentWithWdk({
       account,
