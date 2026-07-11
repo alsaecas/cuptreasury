@@ -4,8 +4,8 @@
 export const wdkContractProof = {
   "ok": true,
   "schemaVersion": 1,
-  "generatedAt": "2026-07-11T15:22:01.970Z",
-  "sourceCommit": "b041e5afecd69f653e04b8fcb5c7d551aa4f33e7",
+  "generatedAt": "2026-07-11T15:23:10.482Z",
+  "sourceCommit": "0bb62c5cbe4e602e0f3a793a6543b1dccc980208",
   "network": {
     "name": "hardhat",
     "chainId": 31337,
@@ -22,14 +22,14 @@ export const wdkContractProof = {
   "teamTreasury": {
     "contractAddress": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
     "requestId": "0",
-    "paymentIntentHash": "0x0fa717819148134225e418aee5601db0e042d0940c3314e1574e0ef797f75f9d",
+    "paymentIntentHash": "0xd00f77f1c83e6735b30d3380c385ebb40f09f8666e5c0c1a108b336ffa6f2998",
     "requiredApprovals": 2,
     "approvalCount": 2
   },
   "wdk": {
     "coreVersion": "@tetherto/wdk",
     "evmModuleVersion": "@tetherto/wdk-wallet-evm",
-    "executorAddress": "0x173CE1220c7ABf4821f4A254de348A80E1c46f58",
+    "executorAddress": "0xb28845D0bdeF137Ab869E610DeB94c903b0f506e",
     "policyDecision": "ALLOW",
     "signedByWdk": true,
     "broadcastLocally": true,
@@ -50,7 +50,7 @@ export const wdkContractProof = {
     }
   ],
   "execution": {
-    "transactionHash": "0xcc03edd5dc43ccd474638021f01568aab11f9255e6235c1fbbf22bc309e1374c",
+    "transactionHash": "0xecbdd05184c8401612eeef159908b9fbba1d1013b796050d9d44da62772e46cf",
     "blockNumber": "9",
     "recipientBalanceBefore": "0",
     "recipientBalanceAfter": "120000000",
@@ -67,5 +67,5 @@ export const wdkContractProof = {
     "mainnet": false
   },
   "secretsPersisted": false,
-  "proofArtifactSha256": "0afc9ce4899b4f72031c5c8236894db06770e440e028d5ae31b13cdbcf87a9c7"
+  "proofArtifactSha256": "390178d394be8e15131c7e87aac8d66d9bfbd78eceee83f4966c7e5299cbc930"
 } as const;
