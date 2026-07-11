@@ -4,8 +4,8 @@
 export const wdkContractProof = {
   "ok": true,
   "schemaVersion": 1,
-  "generatedAt": "2026-07-11T15:45:12.698Z",
-  "sourceCommit": "0d37f2f7c1eb6dd07081b89aa553953afc031875",
+  "generatedAt": "2026-07-11T15:47:58.860Z",
+  "sourceCommit": "6f44c82aa688020c11c92a6a5982cbce5e870981",
   "network": {
     "name": "hardhat",
     "chainId": 31337,
@@ -22,7 +22,7 @@ export const wdkContractProof = {
   "teamTreasury": {
     "contractAddress": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
     "requestId": "0",
-    "paymentIntentHash": "0x7a98450364f7cb5c045b84a9225e8ffdc204e9d31159101199534bd2f8bcd6d0",
+    "paymentIntentHash": "0xa8ec2c9ab6394ee26204b3b200222a92b9dbf1bf48c5136e8ffa24dec067af8d",
     "requiredApprovals": 2,
     "approvalCount": 2,
     "paymentIntentHashMatched": true,
@@ -34,7 +34,7 @@ export const wdkContractProof = {
   "wdk": {
     "coreVersion": "1.0.0-beta.13",
     "evmModuleVersion": "1.0.0-beta.15",
-    "executorAddress": "0x6CD56462C9a0A5DFB20a1417DEE906a0131138eA",
+    "executorAddress": "0x32fb550Fe394dfcb50F453BBE97dACb75446f333",
     "policyDecision": "ALLOW",
     "signedByWdk": true,
     "broadcastLocally": true,
@@ -55,7 +55,7 @@ export const wdkContractProof = {
     }
   ],
   "execution": {
-    "transactionHash": "0xaf01f3cee48ded07d497ac899460664dd0382f1027dcbf765eaa5a111f17b79e",
+    "transactionHash": "0x7eacd3a4f3817d2873efe5366b26d2f9ea905c8f73d5a69601c5f46aabc0af0c",
     "blockNumber": "9",
     "recipientBalanceBefore": "0",
     "recipientBalanceAfter": "120000000",
@@ -79,5 +79,5 @@ export const wdkContractProof = {
     "mainnet": false
   },
   "secretsPersisted": false,
-  "proofArtifactSha256": "38762d18047d14e1c179fc4289e39775ea421099a2b3f63f5601fd958863d946"
+  "proofArtifactSha256": "6cacb92e47ae92ba806eb7df4f62be0be031efc4f0c2ba9b1ab52f3f78aec478"
 } as const;
