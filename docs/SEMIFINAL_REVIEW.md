@@ -2,9 +2,11 @@
 
 ## Final local-proof implementation
 
-Pinned implementation SHA: `4206d8de93d558d336c207ef734bed0a7f38219c`
+Pinned implementation SHA: `a159d139d0bd6243f53ae5a6db7d0337d0879946`
 
-Base URL: `https://github.com/alsaecas/cuptreasury/blob/4206d8de93d558d336c207ef734bed0a7f38219c`
+Base URL: `https://github.com/alsaecas/cuptreasury/blob/a159d139d0bd6243f53ae5a6db7d0337d0879946`
+
+The focused links below use the immediately preceding implementation fixture commit (`4206d8de93d558d336c207ef734bed0a7f38219c`) for stable line ranges; `a159d13` adds only source-commit provenance to that same proof path.
 
 | Area | What it proves | Why it matters | Trade-off | Pinned link |
 | --- | --- | --- | --- | --- |
