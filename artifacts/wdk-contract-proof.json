@@ -1,0 +1,79 @@
+{
+  "ok": true,
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-11T15:47:58.860Z",
+  "sourceCommit": "6f44c82aa688020c11c92a6a5982cbce5e870981",
+  "network": {
+    "name": "hardhat",
+    "chainId": 31337,
+    "ephemeral": true,
+    "realFundsUsed": false
+  },
+  "token": {
+    "symbol": "MockUSDT",
+    "decimals": 6,
+    "contractAddress": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "officialUsdt": false,
+    "localTestOnly": true
+  },
+  "teamTreasury": {
+    "contractAddress": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "requestId": "0",
+    "paymentIntentHash": "0xa8ec2c9ab6394ee26204b3b200222a92b9dbf1bf48c5136e8ffa24dec067af8d",
+    "requiredApprovals": 2,
+    "approvalCount": 2,
+    "paymentIntentHashMatched": true,
+    "tokenMatched": true,
+    "recipientMatched": true,
+    "amountMatched": true,
+    "approvalsMatched": true
+  },
+  "wdk": {
+    "coreVersion": "1.0.0-beta.13",
+    "evmModuleVersion": "1.0.0-beta.15",
+    "executorAddress": "0x32fb550Fe394dfcb50F453BBE97dACb75446f333",
+    "policyDecision": "ALLOW",
+    "signedByWdk": true,
+    "broadcastLocally": true,
+    "approvalsSignedByWdk": true
+  },
+  "tamperScenarios": [
+    {
+      "id": "changed-request-id",
+      "result": "DENY"
+    },
+    {
+      "id": "changed-calldata",
+      "result": "DENY"
+    },
+    {
+      "id": "second-app-use",
+      "result": "DENY"
+    }
+  ],
+  "execution": {
+    "transactionHash": "0x7eacd3a4f3817d2873efe5366b26d2f9ea905c8f73d5a69601c5f46aabc0af0c",
+    "blockNumber": "9",
+    "recipientBalanceBefore": "0",
+    "recipientBalanceAfter": "120000000",
+    "treasuryBalanceBefore": "500000000",
+    "treasuryBalanceAfter": "380000000",
+    "transferredAmount": "120000000",
+    "requestExecuted": true,
+    "transferEventMatched": true,
+    "executionEventMatched": true,
+    "transactionStatus": 1
+  },
+  "defenseInDepth": {
+    "wdkReplayDenied": true,
+    "wdkReplayReason": "PaymentIntent has already been consumed.",
+    "contractReplayReverted": true,
+    "contractReplayError": "RequestAlreadyExecuted"
+  },
+  "broadcast": {
+    "localOnly": true,
+    "publicTestnet": false,
+    "mainnet": false
+  },
+  "secretsPersisted": false
+}

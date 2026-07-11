@@ -55,3 +55,6 @@ Show `/wdk-proof`.
 Close on `/guarded-execution`.
 
 "CupTreasury is submitted for the WDK-only track. It does not claim QVAC or Pear. The semifinal upgrade is exact guarded execution: approved football expenses become application-consumed one-time WDK payment capabilities, and changed or replayed transactions are rejected before signing."
+# Final semifinal demo (2:35)
+
+Start with the grassroots-football money problem, then show the 120-unit van rental: one approval is blocked and Captain plus Treasurer approval authorizes it. Open Guarded Execution to show the PaymentIntent hash and that WDK denies changed amount, recipient, or calldata. Show the deterministic local TeamTreasury proof: two roles approved, WDK signed the exact execute call, the local recipient received exactly 120 MockUSDT, and both WDK and the contract reject replay. Close with CI and the judge guide. Do not read hashes aloud; state that MockUSDT is local/test-only, no real funds moved, and browser pages visualize generated proof rather than run native WDK.

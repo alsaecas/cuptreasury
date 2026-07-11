@@ -61,8 +61,9 @@ export function WdkWalletPanel({
           </p>
           <p className="mt-2 text-sm leading-6 text-lime-50/75">
             CupTreasury does not custody team funds in this MVP. The adapter
-            models the intent, policy, quote, and receipt flow while real WDK
-            native execution remains in Node/CI.
+            visualizes the intent and receipt flow while real WDK-native
+            guarded execution remains in Node/CI. Browser state contains no
+            wallet secrets and never signs or broadcasts a payment.
           </p>
         </div>
 
@@ -72,9 +73,10 @@ export function WdkWalletPanel({
               Real WDK verification
             </p>
             <p className="mt-2 text-sm leading-6 text-zinc-300">
-              CupTreasury verifies the WDK wallet path through a real CLI/CI
-              smoke test and guarded policy demo. The browser visualizes the
-              result without signing or broadcasting treasury payments.
+              CupTreasury verifies exact PaymentIntent policies through real
+              WDK ALLOW/DENY simulation and no-broadcast signing in Node/CI.
+              The browser visualizes the result without signing or broadcasting
+              treasury payments.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link

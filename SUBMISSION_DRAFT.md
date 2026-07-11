@@ -126,3 +126,6 @@ No prior CupTreasury code was reused. The idea is inspired by previous experienc
 ## Teammate / Background
 
 Alejandro Saez Castells is a full-stack engineer with experience building Web3 MVPs, payment authorization flows, identity/access systems, and hackathon products.
+# Final semifinal update
+
+CupTreasury is submitted on the WDK-only Tether track. WDK is the primary enforcement layer: real Node/CI WDK policies bind and sign exact PaymentIntent transactions. A local deterministic TeamTreasury proof adds a second enforcement layer for Captain/Treasurer approval rules and transfers exactly 120 MockUSDT. MockUSDT is local/test-only and not official USDt; there is no mainnet or public-testnet broadcast, no real funds, and no browser wallet secret. QVAC, Pear, and Holepunch/Bare are not claimed.

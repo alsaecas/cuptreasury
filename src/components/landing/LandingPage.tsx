@@ -33,12 +33,15 @@ export function LandingPage() {
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
               A self-custodial football team treasury for squads, fan groups,
               and tournament teams. It tracks contributions, captain/treasurer
-              approvals, and match-day expenses through a WDK-ready wallet flow.
+              approvals, and match-day expenses through WDK-native guarded
+              execution. Captain and Treasurer approvals become exact, one-time
+              PaymentIntent capabilities; WDK rejects modified, expired, or
+              replayed transactions before signing.
             </p>
             <div className="mt-5 grid gap-3 text-sm text-zinc-300 sm:grid-cols-2">
               <div className="flex gap-2">
                 <Flag size={18} className="text-lime-200" aria-hidden="true" />
-                <span>Primary track: WDK with real SDK smoke test</span>
+                <span>Primary track: WDK-native guarded execution</span>
               </div>
               <div className="flex gap-2">
                 <MapPin size={18} className="text-amber-200" aria-hidden="true" />
@@ -54,25 +57,25 @@ export function LandingPage() {
                 Open Demo Treasury
               </Link>
               <Link
+                href="/guarded-execution"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-zinc-50 transition-colors hover:bg-white/10"
+              >
+                <ShieldCheck size={18} aria-hidden="true" />
+                Guarded Execution
+              </Link>
+              <Link
+                href="/wdk-proof"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-cyan-300/30 bg-cyan-300/10 px-5 py-3 text-sm font-bold text-cyan-50 transition-colors hover:bg-cyan-300/20"
+              >
+                <ShieldCheck size={18} aria-hidden="true" />
+                WDK Verification
+              </Link>
+              <Link
                 href="/treasury?create=request"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-zinc-50 transition-colors hover:bg-white/10"
               >
                 <ClipboardCheck size={18} aria-hidden="true" />
                 Create Payment Request
-              </Link>
-              <Link
-                href="/wdk-proof"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-zinc-50 transition-colors hover:bg-white/10"
-              >
-                <ShieldCheck size={18} aria-hidden="true" />
-                See WDK Verification
-              </Link>
-              <Link
-                href="/guarded-execution"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-cyan-300/30 bg-cyan-300/10 px-5 py-3 text-sm font-bold text-cyan-50 transition-colors hover:bg-cyan-300/20"
-              >
-                <ShieldCheck size={18} aria-hidden="true" />
-                Guarded Execution
               </Link>
             </div>
           </div>
@@ -85,7 +88,7 @@ export function LandingPage() {
                 </p>
                 <p className="mt-1 text-2xl font-black">450 USDt</p>
               </div>
-              <Badge tone="green">WDK smoke verified</Badge>
+              <Badge tone="green">WDK policy proof</Badge>
             </div>
             <div className="grid gap-3 py-4 sm:grid-cols-3">
               {[
@@ -129,12 +132,12 @@ export function LandingPage() {
           {
             icon: Wallet,
             title: "Self-custodial team treasury",
-            copy: "CupTreasury does not custody team funds. The WDK packages are installed and verified by no-funds Node smoke and policy proof scripts.",
+            copy: "CupTreasury does not custody team funds. Node/CI runs real WDK ALLOW/DENY policy evaluation and no-broadcast signing; the browser visualizes sanitized proof.",
           },
           {
             icon: ShieldCheck,
             title: "Guarded payment capability",
-            copy: "Captain and Treasurer approvals create an exact PaymentIntent that WDK policy simulation can allow or deny.",
+            copy: "Captain and Treasurer approvals create an exact PaymentIntent. WDK binds the final transaction and denies changes or replay.",
           },
           {
             icon: Bot,

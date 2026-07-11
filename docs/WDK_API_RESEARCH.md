@@ -60,3 +60,6 @@ The implementation will use WDK native `simulate` results for ALLOW/DENY and tra
 ## No Upgrade Decision
 
 No package upgrade is needed for the mandatory WDK path. The installed versions already expose native policy registration, account-scoped policies, simulation, ALLOW/DENY decisions, traces, fee quote attempts, account disposal, and transaction signing. CupTreasury supplies provider-derived unsigned transaction fields before WDK simulation and signing.
+# Contract execution finding
+
+The WDK EVM account can sign the provider-derived type-2 local transaction returned for TeamTreasury contract calldata. CupTreasury registers an account-scoped exact policy before each role approval and a lifecycle/consumption-aware exact policy before final execution, then broadcasts the WDK-signed raw transaction only through the ephemeral local provider.

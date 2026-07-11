@@ -190,3 +190,6 @@ Repository search was performed for OpenAI, Anthropic, Gemini, LangChain, AI SDK
 2. Add model lifecycle and local inference setup.
 3. Keep prompts and treasury data in the local runtime.
 4. Replace deterministic answers with QVAC SDK inference.
+# Final local-proof disclosure
+
+WDK remains the only claimed Tether track technology. TeamTreasury is an application smart contract enforcing shared approvals; it does not replace WDK. MockUSDT is a local test token, not official USDt. The deterministic proof uses Hardhat `31337`, no real funds, no mainnet/public-testnet broadcast, and no browser secrets. QVAC, Pear, and Holepunch/Bare are not claimed.

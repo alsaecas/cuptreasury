@@ -113,7 +113,7 @@ export function WdkProofClient() {
               <Badge tone="blue">No broadcast</Badge>
             </div>
             <h1 className="mt-4 text-4xl font-black leading-none text-white sm:text-5xl">
-              WDK Verification Methods
+              WDK Runtime Verification
             </h1>
             <p className="mt-3 max-w-3xl text-lg leading-7 text-zinc-300">
               Real WDK SDK verification for the CupTreasury wallet path
@@ -124,8 +124,22 @@ export function WdkProofClient() {
       </header>
 
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
+        <section className="rounded-lg border border-cyan-300/20 bg-cyan-300/[0.06] p-6">
+          <Badge tone="blue">Primary enforcement proof</Badge>
+          <h2 className="mt-3 text-2xl font-black text-white">
+            WDK-native guarded execution
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-300">
+            The primary Node/CI proof turns an approved PaymentIntent into an
+            exact signing capability. Native WDK policy simulation records real
+            ALLOW/DENY decisions, binds the exact transaction fields, signs
+            without broadcasting, and denies a second use after application
+            consumption. Open Guarded Execution for the generated proof.
+          </p>
+        </section>
+
         {/* ─── Section A: Real WDK CLI/CI smoke test ─── */}
-        <section className="rounded-lg border border-lime-300/20 bg-lime-300/[0.06] p-6">
+        <section className="mt-6 rounded-lg border border-lime-300/20 bg-lime-300/[0.06] p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
@@ -133,7 +147,7 @@ export function WdkProofClient() {
                 <Badge tone="green">Passing in compatible Node runtime</Badge>
               </div>
               <h2 className="mt-4 text-2xl font-black text-white">
-                Real WDK CLI/CI smoke test
+                Supporting WDK runtime smoke test
               </h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-300">
                 The official CupTreasury WDK verification runs outside the
@@ -222,7 +236,8 @@ export function WdkProofClient() {
                 treasury payment flow: request, approval, PaymentIntent,
                 policy evaluation, and safe receipt preparation. The browser
                 does not execute native WDK wallet operations. The real WDK
-                proof lives in the CLI/CI smoke and policy demo paths.
+                proof lives in the guarded CLI/CI policy path; this page
+                documents the runtime boundary and supporting smoke test.
               </p>
               <ul className="mt-3 space-y-1 text-sm leading-6 text-amber-100/85">
                 <li>The browser visualizes a no-broadcast receipt path.</li>
@@ -253,8 +268,8 @@ export function WdkProofClient() {
                 reports unsupported instead of pretending to run.
               </p>
               <p className="mt-3 text-sm leading-6 text-zinc-400">
-                The official verification paths are the CLI smoke test and the
-                GitHub Actions CI workflow.
+                The official verification paths are the guarded policy proof,
+                local deterministic contract proof, and GitHub Actions CI.
               </p>
             </div>
           </div>
