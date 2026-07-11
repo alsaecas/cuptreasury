@@ -4,8 +4,8 @@
 export const wdkContractProof = {
   "ok": true,
   "schemaVersion": 1,
-  "generatedAt": "2026-07-11T15:25:59.451Z",
-  "sourceCommit": "e95872adf1863f1480bc7aca363dfddebc8cd57a",
+  "generatedAt": "2026-07-11T15:45:12.698Z",
+  "sourceCommit": "0d37f2f7c1eb6dd07081b89aa553953afc031875",
   "network": {
     "name": "hardhat",
     "chainId": 31337,
@@ -22,14 +22,19 @@ export const wdkContractProof = {
   "teamTreasury": {
     "contractAddress": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
     "requestId": "0",
-    "paymentIntentHash": "0x751588ed0ed222aa0847a2662539e132c731988b46d1c3692abad2158ac7f7af",
+    "paymentIntentHash": "0x7a98450364f7cb5c045b84a9225e8ffdc204e9d31159101199534bd2f8bcd6d0",
     "requiredApprovals": 2,
-    "approvalCount": 2
+    "approvalCount": 2,
+    "paymentIntentHashMatched": true,
+    "tokenMatched": true,
+    "recipientMatched": true,
+    "amountMatched": true,
+    "approvalsMatched": true
   },
   "wdk": {
-    "coreVersion": "@tetherto/wdk",
-    "evmModuleVersion": "@tetherto/wdk-wallet-evm",
-    "executorAddress": "0x153cB58A328aB35fD51ADCdAd105060d14af24ed",
+    "coreVersion": "1.0.0-beta.13",
+    "evmModuleVersion": "1.0.0-beta.15",
+    "executorAddress": "0x6CD56462C9a0A5DFB20a1417DEE906a0131138eA",
     "policyDecision": "ALLOW",
     "signedByWdk": true,
     "broadcastLocally": true,
@@ -50,16 +55,23 @@ export const wdkContractProof = {
     }
   ],
   "execution": {
-    "transactionHash": "0xf02669a355919db39717b0d6d4422bbc3afcf27e5b379225e65b094a147adb22",
+    "transactionHash": "0xaf01f3cee48ded07d497ac899460664dd0382f1027dcbf765eaa5a111f17b79e",
     "blockNumber": "9",
     "recipientBalanceBefore": "0",
     "recipientBalanceAfter": "120000000",
+    "treasuryBalanceBefore": "500000000",
+    "treasuryBalanceAfter": "380000000",
     "transferredAmount": "120000000",
-    "requestExecuted": true
+    "requestExecuted": true,
+    "transferEventMatched": true,
+    "executionEventMatched": true,
+    "transactionStatus": 1
   },
   "defenseInDepth": {
     "wdkReplayDenied": true,
-    "contractReplayReverted": true
+    "wdkReplayReason": "PaymentIntent has already been consumed.",
+    "contractReplayReverted": true,
+    "contractReplayError": "RequestAlreadyExecuted"
   },
   "broadcast": {
     "localOnly": true,
@@ -67,5 +79,5 @@ export const wdkContractProof = {
     "mainnet": false
   },
   "secretsPersisted": false,
-  "proofArtifactSha256": "2e25ff7788364ddaf031459fe27fe390277a6c86ab863d7973cf66778bc9f26e"
+  "proofArtifactSha256": "38762d18047d14e1c179fc4289e39775ea421099a2b3f63f5601fd958863d946"
 } as const;

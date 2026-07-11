@@ -6,6 +6,8 @@
 
 The local proof uses two independent barriers. WDK binds executor account, chain, contract, method calldata, zero value, nonce, gas, fees, lifecycle, and one-time application consumption before it signs. TeamTreasury independently requires Captain/Treasurer approvals, request expiry, SafeERC20 transfer, state-before-external-call, and reverts a replay. MockUSDT is local/test-only and not official USDt. Local development funding and broadcast are confined to an ephemeral Hardhat chain; no public-chain RPC is used by this proof.
 
+After approvals, TeamTreasury execution is permissionless for liveness: a relayer may submit the fixed call but cannot redirect or change the approved token, recipient, amount, or PaymentIntent hash.
+
 CupTreasury protects against accidental or malicious drift between an approved football expense and the transaction a wallet is asked to sign. The main threats are:
 
 - Recipient substitution after approval.

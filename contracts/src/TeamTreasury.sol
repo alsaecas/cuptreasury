@@ -24,6 +24,7 @@ contract TeamTreasury is AccessControl, ReentrancyGuard {
         uint8 approvalCount;
         bool executed;
         bool cancelled;
+        bool exists;
     }
 
     uint256 public nextRequestId;
@@ -54,10 +55,14 @@ contract TeamTreasury is AccessControl, ReentrancyGuard {
     error RequestAlreadyExecuted();
     error DuplicateApproval();
     error ApprovalThresholdNotMet();
+    error RequestNotFound();
+    error ZeroPaymentIntentHash();
+    error DuplicateTreasuryOfficer();
 
     constructor(address captain, address treasurer) {
         if (captain == address(0)) revert ZeroCaptain();
         if (treasurer == address(0)) revert ZeroTreasurer();
+        if (captain == treasurer) revert DuplicateTreasuryOfficer();
 
         _grantRole(DEFAULT_ADMIN_ROLE, captain);
         _grantRole(CAPTAIN_ROLE, captain);
@@ -82,6 +87,7 @@ contract TeamTreasury is AccessControl, ReentrancyGuard {
         if (token == address(0)) revert ZeroToken();
         if (recipient == address(0)) revert ZeroRecipient();
         if (amount == 0) revert ZeroAmount();
+        if (paymentIntentHash == bytes32(0)) revert ZeroPaymentIntentHash();
         if (expiresAt <= block.timestamp) revert ExpiredRequest();
         if (requiredApprovals == 0 || requiredApprovals > 2) revert UnsupportedApprovalThreshold();
 
@@ -95,13 +101,15 @@ contract TeamTreasury is AccessControl, ReentrancyGuard {
             requiredApprovals: requiredApprovals,
             approvalCount: 0,
             executed: false,
-            cancelled: false
+            cancelled: false,
+            exists: true
         });
         emit RequestCreated(requestId, token, recipient, amount, paymentIntentHash, expiresAt, requiredApprovals);
     }
 
     function approveRequest(uint256 requestId) external onlyTreasuryOfficer {
         PaymentRequest storage request = requests[requestId];
+        if (!request.exists) revert RequestNotFound();
         if (request.cancelled) revert RequestCancelledError();
         if (request.executed) revert RequestAlreadyExecuted();
         if (request.expiresAt <= block.timestamp) revert ExpiredRequest();
@@ -114,6 +122,7 @@ contract TeamTreasury is AccessControl, ReentrancyGuard {
 
     function executeRequest(uint256 requestId) external nonReentrant {
         PaymentRequest storage request = requests[requestId];
+        if (!request.exists) revert RequestNotFound();
         if (request.cancelled) revert RequestCancelledError();
         if (request.executed) revert RequestAlreadyExecuted();
         if (request.expiresAt <= block.timestamp) revert ExpiredRequest();
@@ -126,6 +135,7 @@ contract TeamTreasury is AccessControl, ReentrancyGuard {
 
     function cancelRequest(uint256 requestId) external onlyTreasuryOfficer {
         PaymentRequest storage request = requests[requestId];
+        if (!request.exists) revert RequestNotFound();
         if (request.executed) revert RequestAlreadyExecuted();
         if (request.cancelled) revert RequestCancelledError();
 
@@ -134,6 +144,8 @@ contract TeamTreasury is AccessControl, ReentrancyGuard {
     }
 
     function getRequest(uint256 requestId) external view returns (PaymentRequest memory) {
-        return requests[requestId];
+        PaymentRequest memory request = requests[requestId];
+        if (!request.exists) revert RequestNotFound();
+        return request;
     }
 }

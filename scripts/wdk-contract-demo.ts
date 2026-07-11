@@ -1,141 +1,66 @@
-import { spawn, type ChildProcess } from "node:child_process";
 import { execFileSync } from "node:child_process";
-import { once } from "node:events";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
 import type { Policy } from "@tetherto/wdk";
-import { Contract, ContractFactory, Interface, JsonRpcProvider, type InterfaceAbi } from "ethers";
+import { Contract, ContractFactory, Interface, JsonRpcProvider, getAddress, type InterfaceAbi } from "ethers";
 
 import { createPaymentIntent, fixedClock, hashPaymentIntent, InMemoryTreasuryMembershipProvider, type TreasuryApproval, type TreasuryPaymentRequest } from "@/domain/treasury";
 import { InMemoryPaymentIntentConsumptionStore, createTreasuryWdk, type EvmTransaction, type TreasuryWdkContext } from "@/lib/wdk/guarded";
 import { createTeamTreasuryExecutionPolicy, prepareTeamTreasuryTransaction, teamTreasuryInterface } from "@/lib/wdk/contracts";
+import { startLocalHardhatNode } from "./lib/localHardhatNode";
 
-const PORT = 18546;
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const RPC_URL = `http://127.0.0.1:${PORT}`;
-const WRITE_JSON = process.argv.includes("--json");
-const ARTIFACT_PATH = resolve("artifacts/wdk-contract-proof.json");
-const AMOUNT = 120_000_000n;
-const FUNDING = 500_000_000n;
+
+const WRITE_JSON = process.argv.includes("--json"); const ARTIFACT_PATH = resolve("artifacts/wdk-contract-proof.json"); const AMOUNT = 120_000_000n; const FUNDING = 500_000_000n;
 type Artifact = { abi: InterfaceAbi; bytecode: string };
 
 async function main() {
-  const node = startNode();
-  let captainContext: TreasuryWdkContext | undefined;
-  let treasurerContext: TreasuryWdkContext | undefined;
+  const node = await startLocalHardhatNode({ logPath: resolve("artifacts/wdk-contract-node.log") });
+  let captain: TreasuryWdkContext | undefined; let treasurer: TreasuryWdkContext | undefined;
   try {
-    await waitForRpc();
-    captainContext = await createTreasuryWdk({ chainId: 31337, provider: RPC_URL });
-    treasurerContext = await createTreasuryWdk({ chainId: 31337, provider: RPC_URL });
-    const proof = await runProof(captainContext, treasurerContext);
-    validateProof(proof);
-    console.log("WDK local contract proof: ALLOW exact call; DENY tampering/replay; transferred 120000000 MockUSDT.");
-    if (WRITE_JSON) {
-      await mkdir(dirname(ARTIFACT_PATH), { recursive: true });
-      await writeFile(ARTIFACT_PATH, `${JSON.stringify(proof, null, 2)}\n`);
-      console.log(`Sanitized proof written to ${ARTIFACT_PATH}`);
-    }
-  } finally {
-    captainContext?.dispose();
-    treasurerContext?.dispose();
-    node.kill("SIGTERM");
-    await once(node, "exit");
-  }
+    captain = await createTreasuryWdk({ chainId: 31337, provider: node.rpcUrl }); treasurer = await createTreasuryWdk({ chainId: 31337, provider: node.rpcUrl });
+    const proof = await runProof(node.rpcUrl, captain, treasurer); validateProof(proof);
+    if (WRITE_JSON) { await mkdir(dirname(ARTIFACT_PATH), { recursive: true }); await writeFile(ARTIFACT_PATH, `${JSON.stringify(proof, null, 2)}\n`); }
+    console.log("WDK local contract proof passed: exact ALLOW, tampering/replay DENY, 120000000 MockUSDT transferred.");
+  } catch (error) { console.error(`WDK contract proof failed.\n${node.getLogs()}`); throw error; }
+  finally { captain?.dispose(); treasurer?.dispose(); await node.stop(); }
 }
 
-async function runProof(captain: TreasuryWdkContext, treasurer: TreasuryWdkContext) {
-  const provider = new JsonRpcProvider(RPC_URL, 31337, { staticNetwork: true });
-  const deployer = await provider.getSigner(0);
-  const recipient = await (await provider.getSigner(4)).getAddress();
-  const [captainAddress, treasurerAddress] = [captain.walletAddress, treasurer.walletAddress];
-  await (await deployer.sendTransaction({ to: captainAddress, value: 10n ** 18n })).wait();
-  await (await deployer.sendTransaction({ to: treasurerAddress, value: 10n ** 18n })).wait();
-  const deployerAddress = await deployer.getAddress();
-  const Mock = new ContractFactory((await artifact("MockUSDT")).abi, (await artifact("MockUSDT")).bytecode, deployer);
-  const token = (await Mock.deploy(deployerAddress)) as unknown as Contract; await token.waitForDeployment();
-  const TreasuryArtifact = await artifact("TeamTreasury");
-  const Treasury = new ContractFactory(TreasuryArtifact.abi, TreasuryArtifact.bytecode, deployer);
-  const treasury = (await Treasury.deploy(captainAddress, treasurerAddress)) as unknown as Contract; await treasury.waitForDeployment();
-  const [tokenAddress, treasuryAddress] = [await token.getAddress(), await treasury.getAddress()];
-  await (await token.mint(treasuryAddress, FUNDING)).wait();
-  const now = new Date(); const expiresAt = new Date(now.getTime() + 20 * 60 * 1000).toISOString();
-  const membership = new InMemoryTreasuryMembershipProvider([
-    { memberId: "captain", address: captainAddress, name: "Ephemeral Captain", role: "Captain", active: true },
-    { memberId: "treasurer", address: treasurerAddress, name: "Ephemeral Treasurer", role: "Treasurer", active: true },
-  ]);
-  const approvals: TreasuryApproval[] = [
-    { id: "captain-domain-approval", memberId: "captain", memberAddress: captainAddress, memberName: "Ephemeral Captain", role: "Captain", createdAt: now.toISOString() },
-    { id: "treasurer-domain-approval", memberId: "treasurer", memberAddress: treasurerAddress, memberName: "Ephemeral Treasurer", role: "Treasurer", createdAt: now.toISOString() },
-  ];
-  const request: TreasuryPaymentRequest = { id: "request-van-rental", title: "Van rental", amountAtomic: AMOUNT.toString(), displayAmount: "120", tokenSymbol: "MockUSDT", tokenDecimals: 6, requestedByMemberId: "captain", requestedByAddress: captainAddress, status: "pending", approvals, memo: "Football transport: seven-seat away-match van.", createdAt: now.toISOString(), expiresAt };
-  const intent = createPaymentIntent({ request, treasuryAccount: captainAddress, chainId: 31337, tokenAddress, recipient, expiresAt, nonce: "local-contract-proof", intentId: "intent-local-van-rental", createdAt: now.toISOString() }, { clock: fixedClock(now), membershipProvider: membership });
-  const paymentIntentHash = hashPaymentIntent(intent);
-
-  const createData = new Interface(["function createRequest(address,address,uint256,bytes32,uint64,uint8)"]).encodeFunctionData("createRequest", [tokenAddress, recipient, AMOUNT, paymentIntentHash, BigInt(Math.floor(Date.parse(expiresAt) / 1000)), 2]);
-  await signedBroadcast(captain, await providerTransaction(provider, captainAddress, treasuryAddress, createData), "create-request");
-  const approvalData = new Interface(["function approveRequest(uint256)"]).encodeFunctionData("approveRequest", [0n]);
-  await signedBroadcast(captain, await providerTransaction(provider, captainAddress, treasuryAddress, approvalData), "captain-approval");
-  await signedBroadcast(treasurer, await providerTransaction(provider, treasurerAddress, treasuryAddress, approvalData), "treasurer-approval");
-  const onChain = await treasury.getRequest(0n);
-  const plan = await prepareTeamTreasuryTransaction({ providerUrl: RPC_URL, from: captainAddress, treasuryContract: treasuryAddress, requestId: 0n, intent });
-  const store = new InMemoryPaymentIntentConsumptionStore();
-  const executionAccount = await captain.registerPolicy(createTeamTreasuryExecutionPolicy({ intent, plan, walletId: captain.walletId, accountIndex: captain.accountIndex, consumptionStore: store }));
-  const changedRequestId = { ...plan.transaction, data: teamTreasuryInterface.encodeFunctionData("executeRequest", [1n]) };
-  const changedCalldata = { ...plan.transaction, data: `${plan.calldata.slice(0, -2)}01` };
-  const allow = await executionAccount.simulate.signTransaction(plan.transaction);
-  const denyRequest = await executionAccount.simulate.signTransaction(changedRequestId);
-  const denyCalldata = await executionAccount.simulate.signTransaction(changedCalldata);
-  if (allow.decision !== "ALLOW") throw new Error(`WDK did not allow exact execution: ${allow.reason}`);
-  const raw = await executionAccount.signTransaction(plan.transaction);
-  await store.consumeAtomically(intent.id, intent.nonce);
-  const receipt = await (await provider.broadcastTransaction(raw)).wait();
-  const before = 0n;
-  const after = await token.balanceOf(recipient);
-  const replay = await executionAccount.simulate.signTransaction(plan.transaction);
-  let contractReplayReverted = false;
-  try { await (await provider.getSigner(0)).sendTransaction({ to: treasuryAddress, data: plan.calldata }); } catch { contractReplayReverted = true; }
-  if (!receipt) throw new Error("Local transaction did not produce a receipt.");
-  return {
-    ok: true, schemaVersion: 1, generatedAt: new Date().toISOString(), sourceCommit: sourceCommit(),
-    network: { name: "hardhat", chainId: 31337, ephemeral: true, realFundsUsed: false },
-    token: { symbol: "MockUSDT", decimals: 6, contractAddress: tokenAddress, officialUsdt: false, localTestOnly: true },
-    teamTreasury: { contractAddress: treasuryAddress, requestId: "0", paymentIntentHash, requiredApprovals: Number(onChain.requiredApprovals), approvalCount: Number(onChain.approvalCount) },
-    wdk: { coreVersion: "@tetherto/wdk", evmModuleVersion: "@tetherto/wdk-wallet-evm", executorAddress: captainAddress, policyDecision: allow.decision, signedByWdk: true, broadcastLocally: true, approvalsSignedByWdk: true },
-    tamperScenarios: [{ id: "changed-request-id", result: denyRequest.decision }, { id: "changed-calldata", result: denyCalldata.decision }, { id: "second-app-use", result: replay.decision }],
-    execution: { transactionHash: receipt.hash, blockNumber: receipt.blockNumber.toString(), recipientBalanceBefore: before.toString(), recipientBalanceAfter: after.toString(), transferredAmount: (after - before).toString(), requestExecuted: (await treasury.getRequest(0n)).executed },
-    defenseInDepth: { wdkReplayDenied: replay.decision === "DENY", contractReplayReverted }, broadcast: { localOnly: true, publicTestnet: false, mainnet: false }, secretsPersisted: false,
-  };
+async function runProof(rpcUrl: string, captain: TreasuryWdkContext, treasurer: TreasuryWdkContext) {
+  const provider = new JsonRpcProvider(rpcUrl, 31337, { staticNetwork: true, cacheTimeout: 0 });
+  try {
+    const deployer = await provider.getSigner(0); const recipient = await (await provider.getSigner(4)).getAddress(); const [captainAddress, treasurerAddress] = [captain.walletAddress, treasurer.walletAddress];
+    await (await deployer.sendTransaction({ to: captainAddress, value: 10n ** 18n })).wait(); await (await deployer.sendTransaction({ to: treasurerAddress, value: 10n ** 18n })).wait();
+    const Mock = new ContractFactory((await artifact("MockUSDT")).abi, (await artifact("MockUSDT")).bytecode, deployer); const token = (await Mock.deploy(await deployer.getAddress())) as unknown as Contract; await token.waitForDeployment();
+    const Treasury = new ContractFactory((await artifact("TeamTreasury")).abi, (await artifact("TeamTreasury")).bytecode, deployer); const treasury = (await Treasury.deploy(captainAddress, treasurerAddress)) as unknown as Contract; await treasury.waitForDeployment();
+    const [tokenAddress, treasuryAddress] = [await token.getAddress(), await treasury.getAddress()]; await (await token.mint(treasuryAddress, FUNDING)).wait();
+    const block = await provider.getBlock("latest"); const now = new Date(block!.timestamp * 1000); const expirySeconds = BigInt(block!.timestamp + 3600); const expiresAt = new Date(Number(expirySeconds) * 1000).toISOString();
+    const membership = new InMemoryTreasuryMembershipProvider([{ memberId: "captain", address: captainAddress, name: "Ephemeral Captain", role: "Captain", active: true }, { memberId: "treasurer", address: treasurerAddress, name: "Ephemeral Treasurer", role: "Treasurer", active: true }]);
+    const approvals: TreasuryApproval[] = [{ id: "captain-domain-approval", memberId: "captain", memberAddress: captainAddress, memberName: "Ephemeral Captain", role: "Captain", createdAt: now.toISOString() }, { id: "treasurer-domain-approval", memberId: "treasurer", memberAddress: treasurerAddress, memberName: "Ephemeral Treasurer", role: "Treasurer", createdAt: now.toISOString() }];
+    const request: TreasuryPaymentRequest = { id: "request-van-rental", title: "Van rental", amountAtomic: AMOUNT.toString(), displayAmount: "120", tokenSymbol: "MockUSDT", tokenDecimals: 6, requestedByMemberId: "captain", requestedByAddress: captainAddress, status: "pending", approvals, memo: "Football transport van.", createdAt: now.toISOString(), expiresAt };
+    const intent = createPaymentIntent({ request, treasuryAccount: captainAddress, chainId: 31337, tokenAddress, recipient, expiresAt, nonce: "local-contract-proof", intentId: "intent-local-van-rental", createdAt: now.toISOString() }, { clock: fixedClock(now), membershipProvider: membership }); const paymentIntentHash = hashPaymentIntent(intent);
+    const createData = new Interface(["function createRequest(address,address,uint256,bytes32,uint64,uint8)"]).encodeFunctionData("createRequest", [tokenAddress, recipient, AMOUNT, paymentIntentHash, expirySeconds, 2]);
+    await signedBroadcast(rpcUrl, captain, await providerTransaction(rpcUrl, captainAddress, treasuryAddress, createData), "create-request"); const approvalData = new Interface(["function approveRequest(uint256)"]).encodeFunctionData("approveRequest", [0n]);
+    await signedBroadcast(rpcUrl, captain, await providerTransaction(rpcUrl, captainAddress, treasuryAddress, approvalData), "captain-approval"); await signedBroadcast(rpcUrl, treasurer, await providerTransaction(rpcUrl, treasurerAddress, treasuryAddress, approvalData), "treasurer-approval");
+    const onChain = await treasury.getRequest(0n); const requestChecks = { paymentIntentHashMatched: onChain.paymentIntentHash === paymentIntentHash, tokenMatched: sameAddress(onChain.token, tokenAddress), recipientMatched: sameAddress(onChain.recipient, recipient), amountMatched: onChain.amount === AMOUNT, approvalsMatched: onChain.requiredApprovals === 2n && onChain.approvalCount === 2n && onChain.executed === false && onChain.cancelled === false && onChain.exists === true }; assertAll(requestChecks, "stored request mismatch");
+    const treasuryBalanceBefore = await token.balanceOf(treasuryAddress); if (treasuryBalanceBefore !== FUNDING) throw new Error("Unexpected pre-execution treasury balance."); const recipientBalanceBefore = await token.balanceOf(recipient);
+    const plan = await prepareTeamTreasuryTransaction({ providerUrl: rpcUrl, from: captainAddress, treasuryContract: treasuryAddress, requestId: 0n, intent }); const store = new InMemoryPaymentIntentConsumptionStore(); const account = await captain.registerPolicy(createTeamTreasuryExecutionPolicy({ intent, plan, walletId: captain.walletId, accountIndex: captain.accountIndex, consumptionStore: store }));
+    const allow = await account.simulate.signTransaction(plan.transaction); const changedRequest = await account.simulate.signTransaction({ ...plan.transaction, data: teamTreasuryInterface.encodeFunctionData("executeRequest", [1n]) }); const changedCalldata = await account.simulate.signTransaction({ ...plan.transaction, data: `${plan.calldata.slice(0, -2)}01` }); if (allow.decision !== "ALLOW") throw new Error(`WDK exact policy denied: ${allow.reason}`);
+    const raw = await account.signTransaction(plan.transaction); await store.consumeAtomically(intent.id, intent.nonce); const receipt = await (await provider.broadcastTransaction(raw)).wait(); if (!receipt || receipt.status !== 1) throw new Error("Local WDK transaction did not succeed.");
+    const recipientBalanceAfter = await token.balanceOf(recipient); const treasuryBalanceAfter = await token.balanceOf(treasuryAddress); const executedRequest = await treasury.getRequest(0n); const transferEventMatched = receipt.logs.some((log) => { try { const event = token.interface.parseLog(log); return sameAddress(log.address, tokenAddress) && event?.name === "Transfer" && sameAddress(event.args.from, treasuryAddress) && sameAddress(event.args.to, recipient) && event.args.value === AMOUNT; } catch { return false; } }); const executionEventMatched = receipt.logs.some((log) => { try { const event = treasury.interface.parseLog(log); return sameAddress(log.address, treasuryAddress) && event?.name === "RequestExecuted" && event.args.requestId === 0n && sameAddress(event.args.executor, captainAddress); } catch { return false; } });
+    if (recipientBalanceAfter - recipientBalanceBefore !== AMOUNT || treasuryBalanceAfter !== FUNDING - AMOUNT || !executedRequest.executed || !transferEventMatched || !executionEventMatched) throw new Error("Execution receipt or balance verification failed.");
+    const replay = await account.simulate.signTransaction(plan.transaction); let contractReplayError = ""; try { await (await provider.getSigner(0)).sendTransaction({ to: treasuryAddress, data: plan.calldata }); } catch (error) { contractReplayError = decodeError(treasury, error); } if (replay.decision !== "DENY" || replay.matched_rule !== "deny-consumed-payment-intent" || contractReplayError !== "RequestAlreadyExecuted") throw new Error("Replay protection evidence failed.");
+    const versions = await installedWdkVersions(); return { ok: true, schemaVersion: 1, generatedAt: new Date().toISOString(), sourceCommit: sourceCommit(), network: { name: "hardhat", chainId: 31337, ephemeral: true, realFundsUsed: false }, token: { symbol: "MockUSDT", decimals: 6, contractAddress: tokenAddress, officialUsdt: false, localTestOnly: true }, teamTreasury: { contractAddress: treasuryAddress, requestId: "0", paymentIntentHash, requiredApprovals: 2, approvalCount: 2, ...requestChecks }, wdk: { coreVersion: versions.coreVersion, evmModuleVersion: versions.evmModuleVersion, executorAddress: captainAddress, policyDecision: allow.decision, signedByWdk: true, broadcastLocally: true, approvalsSignedByWdk: true }, tamperScenarios: [{ id: "changed-request-id", result: changedRequest.decision }, { id: "changed-calldata", result: changedCalldata.decision }, { id: "second-app-use", result: replay.decision }], execution: { transactionHash: receipt.hash, blockNumber: receipt.blockNumber.toString(), recipientBalanceBefore: recipientBalanceBefore.toString(), recipientBalanceAfter: recipientBalanceAfter.toString(), treasuryBalanceBefore: treasuryBalanceBefore.toString(), treasuryBalanceAfter: treasuryBalanceAfter.toString(), transferredAmount: (recipientBalanceAfter - recipientBalanceBefore).toString(), requestExecuted: executedRequest.executed, transferEventMatched, executionEventMatched, transactionStatus: receipt.status }, defenseInDepth: { wdkReplayDenied: true, wdkReplayReason: replay.reason, contractReplayReverted: true, contractReplayError }, broadcast: { localOnly: true, publicTestnet: false, mainnet: false }, secretsPersisted: false };
+  } finally { provider.destroy(); }
 }
 
-async function signedBroadcast(context: TreasuryWdkContext, transaction: EvmTransaction, id: string) {
-  const account = await context.registerPolicy(exactPolicy(context, transaction, id));
-  const decision = await account.simulate.signTransaction(transaction);
-  if (decision.decision !== "ALLOW") throw new Error(`WDK denied ${id}: ${decision.reason}`);
-  const raw = await account.signTransaction(transaction);
-  const receipt = await (await new JsonRpcProvider(RPC_URL, 31337, { staticNetwork: true }).broadcastTransaction(raw)).wait();
-  if (!receipt?.status) throw new Error(`Local ${id} transaction failed.`);
-}
-
-function exactPolicy(context: TreasuryWdkContext, expected: EvmTransaction, id: string): Policy {
-  return { id: `cup-treasury-${id}`, name: `CupTreasury ${id}`, scope: "account", wallet: context.walletId, accounts: [context.accountIndex], rules: [{ name: "allow-exact-local-wdk-call", operation: "signTransaction", action: "ALLOW", reason: "Exact local contract transaction matched.", conditions: [({ params }) => exact(params as EvmTransaction, expected)] }] };
-}
-
-function exact(actual: EvmTransaction, expected: EvmTransaction) {
-  const same = (a: unknown, b: unknown) => { try { return BigInt(a as string | number | bigint) === BigInt(b as string | number | bigint); } catch { return a === b; } };
-  return actual.to?.toLowerCase() === expected.to?.toLowerCase() && actual.data === expected.data && same(actual.value, expected.value) && same(actual.chainId, expected.chainId) && same(actual.nonce, expected.nonce) && same(actual.gasLimit, expected.gasLimit) && same(actual.gasPrice, expected.gasPrice) && same(actual.maxFeePerGas, expected.maxFeePerGas) && same(actual.maxPriorityFeePerGas, expected.maxPriorityFeePerGas) && same(actual.type, expected.type);
-}
-
-async function providerTransaction(provider: JsonRpcProvider, from: string, to: string, data: string): Promise<EvmTransaction> {
-  const freshProvider = new JsonRpcProvider(RPC_URL, 31337, { staticNetwork: true, cacheTimeout: 0 });
-  const [nonce, gasLimit, fee] = await Promise.all([freshProvider.getTransactionCount(from, "pending"), freshProvider.estimateGas({ from, to, data, value: 0n }), freshProvider.getFeeData()]);
-  if (fee.maxFeePerGas !== null && fee.maxPriorityFeePerGas !== null) return { to, data, value: 0n, chainId: 31337, nonce, gasLimit, type: 2, maxFeePerGas: fee.maxFeePerGas, maxPriorityFeePerGas: fee.maxPriorityFeePerGas };
-  return { to, data, value: 0n, chainId: 31337, nonce, gasLimit, gasPrice: fee.gasPrice ?? 1n };
-}
-
+async function signedBroadcast(rpcUrl: string, context: TreasuryWdkContext, transaction: EvmTransaction, id: string) { const account = await context.registerPolicy(exactPolicy(context, transaction, id)); if ((await account.simulate.signTransaction(transaction)).decision !== "ALLOW") throw new Error(`WDK denied ${id}`); const receipt = await (await new JsonRpcProvider(rpcUrl, 31337, { staticNetwork: true, cacheTimeout: 0 }).broadcastTransaction(await account.signTransaction(transaction))).wait(); if (!receipt || receipt.status !== 1) throw new Error(`WDK ${id} failed.`); }
+function exactPolicy(context: TreasuryWdkContext, expected: EvmTransaction, id: string): Policy { return { id: `cup-treasury-${id}`, name: `CupTreasury ${id}`, scope: "account", wallet: context.walletId, accounts: [context.accountIndex], rules: [{ name: "allow-exact-local-wdk-call", operation: "signTransaction", action: "ALLOW", reason: "Exact local contract transaction matched.", conditions: [({ params }) => exact(params as EvmTransaction, expected)] }] }; }
+function exact(actual: EvmTransaction, expected: EvmTransaction) { const equal = (a: unknown, b: unknown) => { try { return BigInt(a as string | number | bigint) === BigInt(b as string | number | bigint); } catch { return a === b; } }; return sameAddress(actual.to ?? "", expected.to ?? "") && actual.data === expected.data && equal(actual.value, expected.value) && equal(actual.chainId, expected.chainId) && equal(actual.nonce, expected.nonce) && equal(actual.gasLimit, expected.gasLimit) && equal(actual.gasPrice, expected.gasPrice) && equal(actual.maxFeePerGas, expected.maxFeePerGas) && equal(actual.maxPriorityFeePerGas, expected.maxPriorityFeePerGas) && equal(actual.type, expected.type); }
+async function providerTransaction(rpcUrl: string, from: string, to: string, data: string): Promise<EvmTransaction> { const provider = new JsonRpcProvider(rpcUrl, 31337, { staticNetwork: true, cacheTimeout: 0 }); try { const [nonce, gasLimit, fee] = await Promise.all([provider.getTransactionCount(from, "pending"), provider.estimateGas({ from, to, data, value: 0n }), provider.getFeeData()]); return fee.maxFeePerGas !== null && fee.maxPriorityFeePerGas !== null ? { to, data, value: 0n, chainId: 31337, nonce, gasLimit, type: 2, maxFeePerGas: fee.maxFeePerGas, maxPriorityFeePerGas: fee.maxPriorityFeePerGas } : { to, data, value: 0n, chainId: 31337, nonce, gasLimit, gasPrice: fee.gasPrice ?? 1n }; } finally { provider.destroy(); } }
 async function artifact(name: "MockUSDT" | "TeamTreasury"): Promise<Artifact> { return JSON.parse(await readFile(resolve(`contracts/artifacts/contracts/src/${name}.sol/${name}.json`), "utf8")) as Artifact; }
-function startNode(): ChildProcess { return spawn(process.execPath, [resolve("node_modules/hardhat/dist/src/cli.js"), "node", "--port", String(PORT)], { cwd: resolve("."), stdio: "ignore" }); }
-async function waitForRpc() { const provider = new JsonRpcProvider(RPC_URL, 31337, { staticNetwork: true }); for (let i = 0; i < 80; i += 1) { try { await provider.getBlockNumber(); return; } catch { await new Promise((done) => setTimeout(done, 100)); } } throw new Error("Timed out starting local Hardhat chain."); }
-function sourceCommit() { try { return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(); } catch { return process.env.GITHUB_SHA ?? "unknown"; } }
-function validateProof(proof: any) { if (!proof.ok || proof.wdk.policyDecision !== "ALLOW" || !proof.wdk.signedByWdk || proof.execution.transferredAmount !== "120000000" || !proof.defenseInDepth.wdkReplayDenied || !proof.defenseInDepth.contractReplayReverted || proof.tamperScenarios.some((item: any) => item.result !== "DENY")) throw new Error("Mandatory local contract proof condition failed."); }
+async function installedWdkVersions() { const [core, evm] = await Promise.all([readFile(resolve("node_modules/@tetherto/wdk/package.json"), "utf8"), readFile(resolve("node_modules/@tetherto/wdk-wallet-evm/package.json"), "utf8")]); return { coreVersion: JSON.parse(core).version as string, evmModuleVersion: JSON.parse(evm).version as string }; }
+function sameAddress(left: string, right: string) { try { return getAddress(left) === getAddress(right); } catch { return false; } } function assertAll(checks: Record<string, boolean>, message: string) { if (Object.values(checks).some((value) => !value)) throw new Error(`${message}: ${JSON.stringify(checks)}`); } function decodeError(contract: Contract, error: unknown) { const data = typeof error === "object" && error && "data" in error && typeof (error as { data?: unknown }).data === "string" ? (error as { data: string }).data : ""; try { return contract.interface.parseError(data)?.name ?? "Unknown"; } catch { return "Unknown"; } } function sourceCommit() { try { return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(); } catch { return "unknown"; } }
+function validateProof(proof: Record<string, any>) { const version = (value: unknown) => typeof value === "string" && /^\d+\.\d+\.\d+/.test(value); if (!proof.ok || !proof.teamTreasury.paymentIntentHashMatched || !proof.teamTreasury.tokenMatched || !proof.teamTreasury.recipientMatched || !proof.teamTreasury.amountMatched || !proof.teamTreasury.approvalsMatched || !proof.execution.transferEventMatched || !proof.execution.executionEventMatched || proof.execution.transactionStatus !== 1 || proof.execution.transferredAmount !== "120000000" || proof.execution.treasuryBalanceBefore !== "500000000" || proof.execution.treasuryBalanceAfter !== "380000000" || !proof.defenseInDepth.wdkReplayReason || proof.defenseInDepth.contractReplayError !== "RequestAlreadyExecuted" || !version(proof.wdk.coreVersion) || !version(proof.wdk.evmModuleVersion) || !proof.wdk.signedByWdk || !proof.broadcast.localOnly || proof.broadcast.publicTestnet || proof.broadcast.mainnet || proof.token.officialUsdt || proof.secretsPersisted || proof.tamperScenarios.some((item: { result: string }) => item.result !== "DENY")) throw new Error("Mandatory local contract proof condition failed."); }
 main().catch((error) => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; });

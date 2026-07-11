@@ -13,6 +13,10 @@ jobs:
   build:
     name: Semifinal verification
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: true
+      FORCE_COLOR: 0
 
     steps:
       - name: Checkout
@@ -41,6 +45,16 @@ jobs:
 
       - name: Test local contracts
         run: npm run contract:test
+
+      - name: Upload local-node diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-node-diagnostics
+          path: |
+            artifacts/contract-node.log
+            artifacts/wdk-contract-node.log
+          if-no-files-found: warn
 
       - name: Generate WDK policy proof
         run: npm run wdk:policy-demo:json

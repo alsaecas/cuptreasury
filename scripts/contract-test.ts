@@ -1,144 +1,87 @@
-import { spawn, type ChildProcess } from "node:child_process";
-import { once } from "node:events";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { Contract, ContractFactory, JsonRpcProvider, ZeroAddress, keccak256, toUtf8Bytes, type ContractTransactionResponse, type InterfaceAbi } from "ethers";
+import { Contract, ContractFactory, JsonRpcProvider, ZeroAddress, keccak256, toUtf8Bytes, type InterfaceAbi } from "ethers";
 
-const PORT = 18545;
-const RPC_URL = `http://127.0.0.1:${PORT}`;
-const AMOUNT = 120_000_000n;
-const FUNDING = 500_000_000n;
+import { startLocalHardhatNode } from "./lib/localHardhatNode";
+
 type Artifact = { abi: InterfaceAbi; bytecode: string };
+let assertions = 0;
+let passed = 0;
 
 async function main() {
-  const node = startNode();
+  const startedAt = performance.now();
+  const node = await startLocalHardhatNode({ logPath: resolve("artifacts/contract-node.log") });
   try {
-    await waitForRpc();
-    await runContractTests();
-    console.log("Contract tests passed: 18 assertions across MockUSDT and TeamTreasury.");
+    await testTeamTreasury(node.rpcUrl);
+    console.log(`Contract harness passed ${passed}/${assertions} assertions in ${(performance.now() - startedAt).toFixed(0)}ms.`);
+  } catch (error) {
+    console.error(`Contract harness failed after ${passed}/${assertions} assertions.\n${node.getLogs()}`);
+    throw error;
   } finally {
-    node.kill("SIGTERM");
-    await once(node, "exit");
+    await node.stop();
   }
 }
 
-async function runContractTests() {
-  const provider = new JsonRpcProvider(RPC_URL, 31337, { staticNetwork: true });
-  const deployer = await provider.getSigner(0);
-  const captain = await provider.getSigner(1);
-  const treasurer = await provider.getSigner(2);
-  const player = await provider.getSigner(3);
-  const recipient = await provider.getSigner(4);
-  const [captainAddress, treasurerAddress, playerAddress, recipientAddress, deployerAddress] = await Promise.all([captain.getAddress(), treasurer.getAddress(), player.getAddress(), recipient.getAddress(), deployer.getAddress()]);
-  const Mock = new ContractFactory((await artifact("MockUSDT")).abi, (await artifact("MockUSDT")).bytecode, deployer);
-  const mock = (await Mock.deploy(deployerAddress)) as unknown as Contract;
-  await mock.waitForDeployment();
-  assertEqual(await mock.name(), "Mock USD Tether", "MockUSDT name");
-  assertEqual(await mock.symbol(), "MockUSDT", "MockUSDT symbol");
-  assertEqual(await mock.decimals(), 6n, "six-decimal token");
-  await expectRevert(() => mock.connect(player).mint(playerAddress, 1n), "unauthorized mint rejected");
-
-  const TreasuryArtifact = await artifact("TeamTreasury");
-  const Treasury = new ContractFactory(TreasuryArtifact.abi, TreasuryArtifact.bytecode, deployer);
-  const treasury = (await Treasury.deploy(captainAddress, treasurerAddress)) as unknown as Contract;
-  await treasury.waitForDeployment();
-  const treasuryAddress = await treasury.getAddress();
-  assertEqual(await treasury.hasRole(await treasury.CAPTAIN_ROLE(), captainAddress), true, "captain role");
-  assertEqual(await treasury.hasRole(await treasury.TREASURER_ROLE(), treasurerAddress), true, "treasurer role");
-  await (await mock.mint(treasuryAddress, FUNDING)).wait();
-  assertEqual(await mock.balanceOf(treasuryAddress), FUNDING, "test mint balance accounting");
-
-  const intentHash = keccak256(toUtf8Bytes("cup-treasury-contract-test-intent"));
-  const expiresAt = BigInt(Math.floor(Date.now() / 1000) + 3600);
-  const tokenAddress = await mock.getAddress();
-  await expectRevert(() => treasury.connect(player).createRequest(tokenAddress, recipientAddress, AMOUNT, intentHash, expiresAt, 2), "player create denied");
-  await expectRevert(() => treasury.connect(captain).createRequest(ZeroAddress, recipientAddress, AMOUNT, intentHash, expiresAt, 2), "zero token rejected");
-  await expectRevert(() => treasury.connect(captain).createRequest(tokenAddress, ZeroAddress, AMOUNT, intentHash, expiresAt, 2), "zero recipient rejected");
-  await expectRevert(() => treasury.connect(captain).createRequest(tokenAddress, recipientAddress, 0n, intentHash, expiresAt, 2), "zero amount rejected");
-  await expectRevert(() => treasury.connect(captain).createRequest(tokenAddress, recipientAddress, AMOUNT, intentHash, expiresAt - 7200n, 2), "expired creation rejected");
-  await expectRevert(() => treasury.connect(captain).createRequest(tokenAddress, recipientAddress, AMOUNT, intentHash, expiresAt, 3), "unsupported threshold rejected");
-
-  const created = await treasury.connect(captain).createRequest(tokenAddress, recipientAddress, AMOUNT, intentHash, expiresAt, 2);
-  assertEvent(treasury, await created.wait(), "RequestCreated", "request created event");
-  const request = await treasury.getRequest(0n);
-  assertEqual(request.paymentIntentHash, intentHash, "stored PaymentIntent hash");
-  assertEqual(request.requiredApprovals, 2n, "stored threshold");
-  await expectRevert(() => treasury.connect(player).approveRequest(0n), "player approval denied");
-  await (await treasury.connect(captain).approveRequest(0n)).wait();
-  assertEqual((await treasury.getRequest(0n)).approvalCount, 1n, "captain approval");
-  await expectRevert(() => treasury.connect(captain).approveRequest(0n), "duplicate approval denied");
-  await expectRevert(() => treasury.connect(captain).executeRequest(0n), "one approval insufficient");
-  const approved = await treasury.connect(treasurer).approveRequest(0n);
-  assertEvent(treasury, await approved.wait(), "RequestApproved", "treasurer approval event");
-  assertEqual((await treasury.getRequest(0n)).approvalCount, 2n, "two approvals");
-  const readyRequest = await treasury.getRequest(0n);
-  assertEqual(readyRequest.requiredApprovals, 2n, "ready request threshold");
-  const beforeRecipient = await mock.balanceOf(recipientAddress);
-  const executed = await treasury.connect(captain).executeRequest(0n);
-  assertEvent(treasury, await executed.wait(), "RequestExecuted", "request executed event");
-  assertEqual(await mock.balanceOf(recipientAddress), beforeRecipient + AMOUNT, "exact recipient transfer");
-  assertEqual(await mock.balanceOf(treasuryAddress), FUNDING - AMOUNT, "treasury balance delta");
-  assertEqual((await treasury.getRequest(0n)).executed, true, "executed state set");
-  await expectRevert(() => treasury.connect(captain).executeRequest(0n), "executed request cannot replay");
-  await expectRevert(() => treasury.connect(captain).approveRequest(0n), "executed request cannot approve");
-
-  await (await treasury.connect(captain).createRequest(tokenAddress, recipientAddress, 1n, keccak256(toUtf8Bytes("cancelled")), expiresAt, 1)).wait();
-  const cancelled = await treasury.connect(treasurer).cancelRequest(1n);
-  assertEvent(treasury, await cancelled.wait(), "RequestCancelled", "request cancelled event");
-  await expectRevert(() => treasury.connect(captain).approveRequest(1n), "cancelled request cannot approve");
-  await expectRevert(() => treasury.connect(captain).executeRequest(1n), "cancelled request cannot execute");
-
-  const block = await provider.getBlock("latest");
-  await (await treasury.connect(captain).createRequest(tokenAddress, recipientAddress, 1n, keccak256(toUtf8Bytes("expired")), BigInt(block!.timestamp + 1), 1)).wait();
-  await provider.send("evm_increaseTime", [2]);
-  await provider.send("evm_mine", []);
-  await expectRevert(() => treasury.connect(captain).approveRequest(2n), "expired request cannot approve");
-  await expectRevert(() => treasury.connect(captain).executeRequest(2n), "expired request cannot execute");
+async function testTeamTreasury(rpcUrl: string) {
+  const provider = new JsonRpcProvider(rpcUrl, 31337, { staticNetwork: true, cacheTimeout: 0 });
+  try {
+    const [deployer, captain, treasurer, player, recipient, relayer] = await Promise.all([0, 1, 2, 3, 4, 5].map((index) => provider.getSigner(index)));
+    const [deployerAddress, captainAddress, treasurerAddress, playerAddress, recipientAddress] = await Promise.all([deployer, captain, treasurer, player, recipient].map((signer) => signer.getAddress()));
+    const Mock = new ContractFactory((await artifact("MockUSDT")).abi, (await artifact("MockUSDT")).bytecode, deployer);
+    const token = (await Mock.deploy(deployerAddress)) as unknown as Contract; await token.waitForDeployment();
+    check("MockUSDT uses six decimals", await token.decimals(), 6n);
+    await rejects("unauthorized MockUSDT mint", () => token.connect(player).mint(playerAddress, 1n));
+    const Treasury = new ContractFactory((await artifact("TeamTreasury")).abi, (await artifact("TeamTreasury")).bytecode, deployer);
+    await rejects("duplicate officers rejected", () => Treasury.deploy(captainAddress, captainAddress));
+    const treasury = (await Treasury.deploy(captainAddress, treasurerAddress)) as unknown as Contract; await treasury.waitForDeployment();
+    const treasuryAddress = await treasury.getAddress();
+    check("captain role initialized", await treasury.hasRole(await treasury.CAPTAIN_ROLE(), captainAddress), true);
+    check("treasurer role initialized", await treasury.hasRole(await treasury.TREASURER_ROLE(), treasurerAddress), true);
+    await (await token.mint(treasuryAddress, 500_000_000n)).wait();
+    check("local test mint accounted", await token.balanceOf(treasuryAddress), 500_000_000n);
+    const block = await provider.getBlock("latest");
+    const expiresAt = BigInt(block!.timestamp + 3600);
+    const hash = keccak256(toUtf8Bytes("contract-harness-intent"));
+    const tokenAddress = await token.getAddress();
+    await rejects("nonexistent request cannot approve", () => treasury.connect(captain).approveRequest(99n));
+    await rejects("nonexistent request cannot execute", () => treasury.connect(relayer).executeRequest(99n));
+    await rejects("nonexistent request cannot cancel", () => treasury.connect(captain).cancelRequest(99n));
+    await rejects("nonexistent request cannot read", () => treasury.getRequest(99n));
+    await rejects("player cannot create", () => treasury.connect(player).createRequest(tokenAddress, recipientAddress, 120_000_000n, hash, expiresAt, 2));
+    await rejects("zero token rejected", () => treasury.connect(captain).createRequest(ZeroAddress, recipientAddress, 1n, hash, expiresAt, 1));
+    await rejects("zero recipient rejected", () => treasury.connect(captain).createRequest(tokenAddress, ZeroAddress, 1n, hash, expiresAt, 1));
+    await rejects("zero amount rejected", () => treasury.connect(captain).createRequest(tokenAddress, recipientAddress, 0n, hash, expiresAt, 1));
+    await rejects("zero PaymentIntent hash rejected", () => treasury.connect(captain).createRequest(tokenAddress, recipientAddress, 1n, "0x" + "00".repeat(32), expiresAt, 1));
+    await rejects("expired creation rejected", () => treasury.connect(captain).createRequest(tokenAddress, recipientAddress, 1n, hash, BigInt(block!.timestamp), 1));
+    await rejects("invalid threshold rejected", () => treasury.connect(captain).createRequest(tokenAddress, recipientAddress, 1n, hash, expiresAt, 3));
+    const created = await treasury.connect(captain).createRequest(tokenAddress, recipientAddress, 120_000_000n, hash, expiresAt, 2); await created.wait();
+    const request = await treasury.getRequest(0n);
+    check("request zero exists", request.exists, true); check("stored hash matches", request.paymentIntentHash, hash); check("stored threshold matches", request.requiredApprovals, 2n);
+    await rejects("player cannot approve", () => treasury.connect(player).approveRequest(0n));
+    await (await treasury.connect(captain).approveRequest(0n)).wait();
+    check("captain approval recorded", (await treasury.getRequest(0n)).approvalCount, 1n);
+    await rejects("duplicate approval rejected", () => treasury.connect(captain).approveRequest(0n));
+    await rejects("one approval cannot execute", () => treasury.connect(relayer).executeRequest(0n));
+    await (await treasury.connect(treasurer).approveRequest(0n)).wait();
+    check("treasurer approval recorded", (await treasury.getRequest(0n)).approvalCount, 2n);
+    const beforeRecipient = await token.balanceOf(recipientAddress);
+    await (await treasury.connect(relayer).executeRequest(0n)).wait();
+    check("permissionless relayer receives no redirected value", await token.balanceOf(recipientAddress), beforeRecipient + 120_000_000n);
+    check("exact treasury debit", await token.balanceOf(treasuryAddress), 380_000_000n);
+    check("request is executed", (await treasury.getRequest(0n)).executed, true);
+    await rejects("executed request cannot replay", () => treasury.connect(relayer).executeRequest(0n));
+    await (await treasury.connect(captain).createRequest(tokenAddress, recipientAddress, 1n, keccak256(toUtf8Bytes("cancelled")), expiresAt, 1)).wait();
+    await (await treasury.connect(treasurer).cancelRequest(1n)).wait();
+    await rejects("cancelled request cannot execute", () => treasury.connect(relayer).executeRequest(1n));
+    const current = await provider.getBlock("latest"); const shortExpiry = BigInt(current!.timestamp + 3600);
+    await (await treasury.connect(captain).createRequest(tokenAddress, recipientAddress, 1n, keccak256(toUtf8Bytes("expired")), shortExpiry, 1)).wait();
+    await provider.send("evm_increaseTime", [3601]); await provider.send("evm_mine", []);
+    await rejects("expired request cannot approve", () => treasury.connect(captain).approveRequest(2n));
+  } finally { provider.destroy(); }
 }
 
-async function artifact(name: "MockUSDT" | "TeamTreasury"): Promise<Artifact> {
-  return JSON.parse(await readFile(resolve(`contracts/artifacts/contracts/src/${name}.sol/${name}.json`), "utf8")) as Artifact;
-}
-
-function startNode(): ChildProcess {
-  return spawn(process.execPath, [resolve("node_modules/hardhat/dist/src/cli.js"), "node", "--port", String(PORT)], {
-    cwd: resolve("."),
-    stdio: "ignore",
-  });
-}
-
-async function waitForRpc() {
-  const provider = new JsonRpcProvider(RPC_URL, 31337, { staticNetwork: true });
-  for (let attempt = 0; attempt < 80; attempt += 1) {
-    try {
-      if ((await provider.getNetwork()).chainId === 31337n) {
-        await provider.getBlockNumber();
-        return;
-      }
-    } catch { /* starting */ }
-    await new Promise((done) => setTimeout(done, 100));
-  }
-  throw new Error("Timed out while starting the local Hardhat chain.");
-}
-
-async function expectRevert(action: () => Promise<unknown>, label: string) {
-  try { await action(); } catch { return; }
-  throw new Error(`Expected revert: ${label}`);
-}
-
-function assertEqual(actual: unknown, expected: unknown, label: string) {
-  if (actual !== expected) throw new Error(`${label}: expected ${String(expected)}, got ${String(actual)}`);
-}
-
-function assertEvent(contract: Contract, receipt: Awaited<ReturnType<ContractTransactionResponse["wait"]>>, event: string, label: string) {
-  const found = receipt?.logs.some((log) => {
-    try { return contract.interface.parseLog(log)?.name === event; } catch { return false; }
-  });
-  if (!found) throw new Error(`Missing ${event}: ${label}`);
-}
-
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+async function artifact(name: "MockUSDT" | "TeamTreasury"): Promise<Artifact> { return JSON.parse(await readFile(resolve(`contracts/artifacts/contracts/src/${name}.sol/${name}.json`), "utf8")) as Artifact; }
+function check(name: string, actual: unknown, expected: unknown) { assertions += 1; if (actual !== expected) throw new Error(`${name}: expected ${String(expected)}, received ${String(actual)}`); passed += 1; console.log(`PASS ${name}`); }
+async function rejects(name: string, action: () => Promise<unknown>) { assertions += 1; try { await action(); } catch { passed += 1; console.log(`PASS ${name}`); return; } throw new Error(`${name}: expected revert`); }
+main().catch((error) => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; });

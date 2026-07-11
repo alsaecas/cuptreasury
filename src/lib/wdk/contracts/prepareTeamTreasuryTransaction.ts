@@ -9,10 +9,10 @@ const treasuryInterface = new Interface(["function executeRequest(uint256 reques
 export async function prepareTeamTreasuryTransaction(input: {
   providerUrl: string; from: string; treasuryContract: string; requestId: bigint; intent: PaymentIntent;
 }): Promise<TeamTreasuryExecutionPlan> {
-  const provider = new JsonRpcProvider(input.providerUrl, 31337, { staticNetwork: true });
+  const provider = new JsonRpcProvider(input.providerUrl, 31337, { staticNetwork: true, cacheTimeout: 0 });
   const data = treasuryInterface.encodeFunctionData("executeRequest", [input.requestId]);
   const [nonce, gasLimit, feeData] = await Promise.all([
-    provider.getTransactionCount(input.from, "latest"),
+    provider.getTransactionCount(input.from, "pending"),
     provider.estimateGas({ from: input.from, to: input.treasuryContract, data, value: 0n }),
     provider.getFeeData(),
   ]);
@@ -20,7 +20,9 @@ export async function prepareTeamTreasuryTransaction(input: {
   if (feeData.maxFeePerGas !== null && feeData.maxPriorityFeePerGas !== null) {
     transaction.type = 2; transaction.maxFeePerGas = feeData.maxFeePerGas; transaction.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
   } else if (feeData.gasPrice !== null) { transaction.gasPrice = feeData.gasPrice; } else { throw new Error("Local provider did not supply fees."); }
-  return { paymentIntentId: input.intent.id, paymentIntentHash: (await import("@/domain/treasury")).hashPaymentIntent(input.intent), chainId: 31337, executorAccount: input.from, treasuryContract: input.treasuryContract, onChainRequestId: input.requestId.toString(), calldata: data, calldataHash: keccak256(data), nativeValue: "0", expiresAt: input.intent.expiresAt, transaction };
+  const plan = { paymentIntentId: input.intent.id, paymentIntentHash: (await import("@/domain/treasury")).hashPaymentIntent(input.intent), chainId: 31337, executorAccount: input.from, treasuryContract: input.treasuryContract, onChainRequestId: input.requestId.toString(), calldata: data, calldataHash: keccak256(data), nativeValue: "0" as const, expiresAt: input.intent.expiresAt, transaction };
+  provider.destroy();
+  return plan;
 }
 
 export const teamTreasuryInterface = treasuryInterface;
