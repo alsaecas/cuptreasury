@@ -2,6 +2,7 @@
   "name": "cup-treasury",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "license": "Apache-2.0",
   "scripts": {
     "dev": "next dev",
@@ -16,6 +17,13 @@
     "wdk:policy-demo:json": "tsx scripts/wdk-policy-demo.ts --json",
     "guarded-proof:generate": "tsx scripts/generate-guarded-proof.ts",
     "guarded-proof:check": "tsx scripts/check-guarded-proof.ts",
+    "contract:compile": "hardhat compile",
+    "contract:test": "npm run contract:compile && tsx scripts/contract-test.ts",
+    "contract:node": "hardhat node",
+    "wdk:contract-demo": "tsx scripts/wdk-contract-demo.ts",
+    "wdk:contract-demo:json": "tsx scripts/wdk-contract-demo.ts --json",
+    "contract-proof:generate": "tsx scripts/generate-contract-proof.ts",
+    "contract-proof:check": "tsx scripts/check-contract-proof.ts",
     "proof:manifest": "tsx scripts/generate-proof-manifest.ts",
     "semifinal:verify": "npm run lint && npm run build && npm test && npm run test:coverage && npm run wdk:smoke && npm run wdk:policy-demo && npm run wdk:policy-demo:json && npm run guarded-proof:check"
   },
@@ -29,6 +37,8 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.14",
+    "@openzeppelin/contracts": "^5.6.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -37,6 +47,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "hardhat": "^3.9.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.0",
     "typescript": "^5",
